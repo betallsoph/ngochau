@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,11 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { DollarSign, Home, Receipt, Calendar } from 'lucide-react';
-import { mockRooms, mockInvoices, dashboardStats, buildings, calculateBuildingStats, getBuildingById } from '@/lib/data';
+import { DollarSign, Home, Receipt, Calendar, Send, Check, Loader2 } from 'lucide-react';
+import { mockRooms, mockInvoices, dashboardStats, buildings, calculateBuildingStats, getBuildingById, type Invoice } from '@/lib/data';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [today, setToday] = useState<string>('');
+  const [processingInvoiceId, setProcessingInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     setToday(new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
@@ -32,6 +36,38 @@ export default function DashboardPage() {
 
   // Get unpaid invoices
   const unpaidInvoices = mockInvoices.filter(i => i.status !== 'paid').slice(0, 5);
+
+  // Quick actions
+  const handleQuickPay = async (invoice: Invoice, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProcessingInvoiceId(invoice.id);
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã xác nhận thanh toán', {
+      description: `P.${invoice.roomNumber} - ${formatCurrency(invoice.totalAmount)}`,
+    });
+
+    setProcessingInvoiceId(null);
+  };
+
+  const handleQuickSendZalo = async (invoice: Invoice, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    toast.info('Đang khởi tạo liên kết Zalo...', {
+      description: `Gửi nhắc nhở cho ${invoice.tenantName}`,
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã mở Zalo', {
+      description: 'Tin nhắn đã được chuẩn bị sẵn',
+    });
+  };
+
+  const handleInvoiceRowClick = (invoice: Invoice) => {
+    router.push(`/dashboard/invoices?search=${invoice.id}`);
+  };
 
   return (
     <div className="space-y-8">
@@ -159,14 +195,20 @@ export default function DashboardPage() {
                     <TableHead className="text-right">Số tiền</TableHead>
                     <TableHead className="hidden sm:table-cell">Hạn thu</TableHead>
                     <TableHead>Tình trạng</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {unpaidInvoices.map((invoice) => {
                     const building = getBuildingById(invoice.buildingId);
                     const isOverdue = invoice.status === 'overdue';
+                    const isProcessing = processingInvoiceId === invoice.id;
                     return (
-                      <TableRow key={invoice.id}>
+                      <TableRow
+                        key={invoice.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleInvoiceRowClick(invoice)}
+                      >
                         <TableCell>
                           <div className="font-medium">P.{invoice.roomNumber}</div>
                           <div className="text-sm text-muted-foreground">{building?.shortName}</div>
@@ -178,6 +220,33 @@ export default function DashboardPage() {
                           <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
                             {isOverdue ? 'Quá hạn' : 'Chờ thu'}
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => handleQuickSendZalo(invoice, e)}
+                              title="Gửi Zalo"
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={(e) => handleQuickPay(invoice, e)}
+                              disabled={isProcessing}
+                              title="Xác nhận đã thu"
+                            >
+                              {isProcessing ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

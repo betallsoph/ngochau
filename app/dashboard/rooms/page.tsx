@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,22 +38,88 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Plus, User, Zap, Droplet, Camera, FileText, Upload, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save } from 'lucide-react';
-import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus, type RoomPricing } from '@/lib/data';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Search, Plus, User, Zap, Droplet, Camera, FileText, Upload, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save, Loader2, LogOut } from 'lucide-react';
+import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus } from '@/lib/data';
+import { toast } from 'sonner';
 
 type FilterStatus = 'all' | 'empty' | 'occupied' | 'debt';
+
+// Form state types
+interface NewRoomForm {
+  building: string;
+  roomNumber: string;
+  floor: string;
+  monthlyRent: string;
+  area: string;
+}
+
+interface TenantForm {
+  name: string;
+  phone: string;
+  idNumber: string;
+  moveInDate: string;
+  deposit: string;
+  notes: string;
+}
+
+interface MeterForm {
+  newElectricity: string;
+  newWater: string;
+}
 
 function RoomsContent() {
   const searchParams = useSearchParams();
   const initialBuilding = searchParams.get('building') || 'all';
 
+  // UI States
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [buildingFilter, setBuildingFilter] = useState<string>(initialBuilding);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newRoomBuilding, setNewRoomBuilding] = useState<string>('');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
+
+  // Loading states
+  const [isAddingRoom, setIsAddingRoom] = useState(false);
+  const [isSavingTenant, setIsSavingTenant] = useState(false);
+  const [isSavingPricing, setIsSavingPricing] = useState(false);
+  const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  // Form states
+  const [newRoomForm, setNewRoomForm] = useState<NewRoomForm>({
+    building: '',
+    roomNumber: '',
+    floor: '',
+    monthlyRent: '',
+    area: '',
+  });
+
+  const [tenantForm, setTenantForm] = useState<TenantForm>({
+    name: '',
+    phone: '',
+    idNumber: '',
+    moveInDate: '',
+    deposit: '',
+    notes: '',
+  });
+
+  const [meterForm, setMeterForm] = useState<MeterForm>({
+    newElectricity: '',
+    newWater: '',
+  });
 
   // Custom pricing state for selected room
   const [useCustomPricing, setUseCustomPricing] = useState(false);
@@ -65,6 +131,7 @@ function RoomsContent() {
     parkingFee: defaultPricingTemplate.parkingFee,
   });
 
+  // Filtered rooms with search and status filter
   const filteredRooms = useMemo(() => {
     return mockRooms.filter(room => {
       const matchSearch = room.roomNumber.includes(search) ||
@@ -80,6 +147,7 @@ function RoomsContent() {
     });
   }, [search, statusFilter, buildingFilter]);
 
+  // Stats
   const stats = useMemo(() => {
     const rooms = buildingFilter === 'all' ? mockRooms : mockRooms.filter(r => r.buildingId === buildingFilter);
     return {
@@ -92,6 +160,7 @@ function RoomsContent() {
 
   const selectedBuilding = buildingFilter !== 'all' ? getBuildingById(buildingFilter) : null;
 
+  // Helper functions
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
   };
@@ -104,6 +173,56 @@ function RoomsContent() {
     }
   };
 
+  const getLastMeterReading = (room: Room) => {
+    if (!room.meterReadings || room.meterReadings.length === 0) return null;
+    return room.meterReadings[room.meterReadings.length - 1];
+  };
+
+  // Get effective pricing for current room
+  const getEffectivePricing = useCallback(() => {
+    if (useCustomPricing) {
+      return customPricing;
+    }
+    return defaultPricingTemplate;
+  }, [useCustomPricing, customPricing]);
+
+  // Calculate invoice preview
+  const invoicePreview = useMemo(() => {
+    if (!selectedRoom) return null;
+
+    const lastReading = getLastMeterReading(selectedRoom);
+    const pricing = getEffectivePricing();
+
+    const prevElectricity = lastReading?.electricityCurr || 0;
+    const prevWater = lastReading?.waterCurr || 0;
+    const newElectricity = parseInt(meterForm.newElectricity) || prevElectricity;
+    const newWater = parseInt(meterForm.newWater) || prevWater;
+
+    const electricityUsage = Math.max(0, newElectricity - prevElectricity);
+    const waterUsage = Math.max(0, newWater - prevWater);
+
+    const electricityCost = electricityUsage * pricing.electricityRate;
+    const waterCost = waterUsage * pricing.waterRate;
+    const otherFees = pricing.wifiFee + pricing.trashFee;
+
+    const total = selectedRoom.monthlyRent + electricityCost + waterCost + otherFees;
+
+    return {
+      rent: selectedRoom.monthlyRent,
+      electricityUsage,
+      electricityCost,
+      electricityRate: pricing.electricityRate,
+      waterUsage,
+      waterCost,
+      waterRate: pricing.waterRate,
+      wifiFee: pricing.wifiFee,
+      trashFee: pricing.trashFee,
+      otherFees,
+      total
+    };
+  }, [selectedRoom, meterForm, getEffectivePricing]);
+
+  // Event handlers
   const handleRoomClick = (room: Room) => {
     setSelectedRoom(room);
     // Load room's custom pricing if exists
@@ -118,20 +237,148 @@ function RoomsContent() {
       });
     } else {
       setUseCustomPricing(false);
-      setCustomPricing({
-        electricityRate: defaultPricingTemplate.electricityRate,
-        waterRate: defaultPricingTemplate.waterRate,
-        wifiFee: defaultPricingTemplate.wifiFee,
-        trashFee: defaultPricingTemplate.trashFee,
-        parkingFee: defaultPricingTemplate.parkingFee,
+      setCustomPricing({ ...defaultPricingTemplate });
+    }
+    // Load tenant info if exists
+    if (room.tenant) {
+      setTenantForm({
+        name: room.tenant.name,
+        phone: room.tenant.phone,
+        idNumber: room.tenant.idNumber,
+        moveInDate: room.tenant.moveInDate,
+        deposit: room.tenant.deposit.toString(),
+        notes: room.tenant.notes || '',
+      });
+    } else {
+      setTenantForm({
+        name: '',
+        phone: '',
+        idNumber: '',
+        moveInDate: '',
+        deposit: '',
+        notes: '',
       });
     }
+    // Reset meter form
+    setMeterForm({ newElectricity: '', newWater: '' });
     setSheetOpen(true);
   };
 
-  const getLastMeterReading = (room: Room) => {
-    if (!room.meterReadings || room.meterReadings.length === 0) return null;
-    return room.meterReadings[room.meterReadings.length - 1];
+  const handleAddRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newRoomForm.building || !newRoomForm.roomNumber) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    setIsAddingRoom(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã thêm phòng mới thành công', {
+      description: `Phòng ${newRoomForm.roomNumber} - ${getBuildingById(newRoomForm.building)?.shortName}`,
+    });
+
+    setNewRoomForm({
+      building: '',
+      roomNumber: '',
+      floor: '',
+      monthlyRent: '',
+      area: '',
+    });
+    setDialogOpen(false);
+    setIsAddingRoom(false);
+  };
+
+  const handleSaveTenant = async () => {
+    if (!tenantForm.name || !tenantForm.phone) {
+      toast.error('Vui lòng điền tên và số điện thoại');
+      return;
+    }
+
+    setIsSavingTenant(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã cập nhật thông tin khách thuê');
+    setIsSavingTenant(false);
+  };
+
+  const handleAddTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!tenantForm.name || !tenantForm.phone || !tenantForm.idNumber) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    setIsSavingTenant(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã thêm khách thuê mới', {
+      description: `${tenantForm.name} - Phòng ${selectedRoom?.roomNumber}`,
+    });
+
+    setAddTenantDialogOpen(false);
+    setIsSavingTenant(false);
+  };
+
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã trả phòng thành công', {
+      description: `Phòng ${selectedRoom?.roomNumber} đã trống`,
+    });
+
+    setIsCheckingOut(false);
+    setSheetOpen(false);
+  };
+
+  const handleSavePricing = async () => {
+    setIsSavingPricing(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã lưu cấu hình giá dịch vụ', {
+      description: `Phòng ${selectedRoom?.roomNumber}`,
+    });
+
+    setIsSavingPricing(false);
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!meterForm.newElectricity || !meterForm.newWater) {
+      toast.error('Vui lòng nhập số điện và số nước mới');
+      return;
+    }
+
+    setIsCreatingInvoice(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    toast.success('Đã tạo hóa đơn thành công', {
+      description: `Tổng tiền: ${formatCurrency(invoicePreview?.total || 0)}`,
+    });
+
+    setMeterForm({ newElectricity: '', newWater: '' });
+    setIsCreatingInvoice(false);
+  };
+
+  const handleUploadImage = (type: string) => {
+    toast.info('Đang mở trình chọn file...', {
+      description: `Upload ${type}`,
+    });
+    // In real app, this would open file picker
   };
 
   return (
@@ -157,10 +404,13 @@ function RoomsContent() {
             <DialogHeader>
               <DialogTitle>Thêm phòng mới</DialogTitle>
             </DialogHeader>
-            <form className="space-y-4 mt-4">
+            <form onSubmit={handleAddRoom} className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="building">Tòa nhà</Label>
-                <Select value={newRoomBuilding} onValueChange={setNewRoomBuilding}>
+                <Select
+                  value={newRoomForm.building}
+                  onValueChange={(v) => setNewRoomForm(prev => ({ ...prev, building: v }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn tòa nhà" />
                   </SelectTrigger>
@@ -174,26 +424,50 @@ function RoomsContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="roomNumber">Số phòng</Label>
-                  <Input id="roomNumber" placeholder="VD: 101" />
+                  <Input
+                    id="roomNumber"
+                    placeholder="VD: 101"
+                    value={newRoomForm.roomNumber}
+                    onChange={(e) => setNewRoomForm(prev => ({ ...prev, roomNumber: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="floor">Tầng</Label>
-                  <Input id="floor" type="number" placeholder="1" />
+                  <Input
+                    id="floor"
+                    type="number"
+                    placeholder="1"
+                    value={newRoomForm.floor}
+                    onChange={(e) => setNewRoomForm(prev => ({ ...prev, floor: e.target.value }))}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="monthlyRent">Giá thuê (đ/tháng)</Label>
-                <Input id="monthlyRent" type="number" placeholder="5000000" />
+                <Input
+                  id="monthlyRent"
+                  type="number"
+                  placeholder="5000000"
+                  value={newRoomForm.monthlyRent}
+                  onChange={(e) => setNewRoomForm(prev => ({ ...prev, monthlyRent: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="area">Diện tích (m²)</Label>
-                <Input id="area" type="number" placeholder="25" />
+                <Input
+                  id="area"
+                  type="number"
+                  placeholder="25"
+                  value={newRoomForm.area}
+                  onChange={(e) => setNewRoomForm(prev => ({ ...prev, area: e.target.value }))}
+                />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="submit" onClick={(e) => { e.preventDefault(); setDialogOpen(false); }}>
+                <Button type="submit" disabled={isAddingRoom}>
+                  {isAddingRoom && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Thêm phòng
                 </Button>
               </div>
@@ -261,7 +535,7 @@ function RoomsContent() {
                 return (
                   <TableRow
                     key={room.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => handleRoomClick(room)}
                   >
                     <TableCell className="font-medium">P.{room.roomNumber}</TableCell>
@@ -432,19 +706,32 @@ function RoomsContent() {
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="tenantName">Tên khách thuê</Label>
-                        <Input id="tenantName" defaultValue={selectedRoom.tenant.name} />
+                        <Input
+                          id="tenantName"
+                          value={tenantForm.name}
+                          onChange={(e) => setTenantForm(prev => ({ ...prev, name: e.target.value }))}
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="phone">Số điện thoại</Label>
                           <div className="relative">
                             <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input id="phone" defaultValue={selectedRoom.tenant.phone} className="pl-9" />
+                            <Input
+                              id="phone"
+                              value={tenantForm.phone}
+                              onChange={(e) => setTenantForm(prev => ({ ...prev, phone: e.target.value }))}
+                              className="pl-9"
+                            />
                           </div>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="idNumber">Số CCCD</Label>
-                          <Input id="idNumber" defaultValue={selectedRoom.tenant.idNumber} />
+                          <Input
+                            id="idNumber"
+                            value={tenantForm.idNumber}
+                            onChange={(e) => setTenantForm(prev => ({ ...prev, idNumber: e.target.value }))}
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -455,7 +742,8 @@ function RoomsContent() {
                             <Input
                               id="moveInDate"
                               type="date"
-                              defaultValue={selectedRoom.tenant.moveInDate}
+                              value={tenantForm.moveInDate}
+                              onChange={(e) => setTenantForm(prev => ({ ...prev, moveInDate: e.target.value }))}
                               className="pl-9"
                             />
                           </div>
@@ -467,7 +755,8 @@ function RoomsContent() {
                             <Input
                               id="deposit"
                               type="number"
-                              defaultValue={selectedRoom.tenant.deposit}
+                              value={tenantForm.deposit}
+                              onChange={(e) => setTenantForm(prev => ({ ...prev, deposit: e.target.value }))}
                               className="pl-9"
                             />
                           </div>
@@ -475,21 +764,129 @@ function RoomsContent() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="notes">Ghi chú</Label>
-                        <Input id="notes" defaultValue={selectedRoom.tenant.notes || ''} placeholder="Ghi chú về khách thuê..." />
+                        <Input
+                          id="notes"
+                          value={tenantForm.notes}
+                          onChange={(e) => setTenantForm(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Ghi chú về khách thuê..."
+                        />
                       </div>
                       <div className="pt-4 flex gap-3">
-                        <Button className="flex-1">Lưu thay đổi</Button>
-                        <Button variant="outline">Trả phòng</Button>
+                        <Button
+                          className="flex-1"
+                          onClick={handleSaveTenant}
+                          disabled={isSavingTenant}
+                        >
+                          {isSavingTenant && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                          Lưu thay đổi
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline">
+                              <LogOut className="h-4 w-4 mr-2" />
+                              Trả phòng
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Xác nhận trả phòng?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Khách {selectedRoom.tenant?.name} sẽ trả phòng {selectedRoom.roomNumber}.
+                                Thông tin khách thuê sẽ được lưu vào lịch sử.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Hủy</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleCheckout}
+                                disabled={isCheckingOut}
+                              >
+                                {isCheckingOut && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Xác nhận
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </>
                   ) : (
                     <div className="text-center py-8">
                       <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-muted-foreground mb-4">Phòng đang trống</p>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Thêm khách thuê
-                      </Button>
+                      <Dialog open={addTenantDialogOpen} onOpenChange={setAddTenantDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Thêm khách thuê
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                          <DialogHeader>
+                            <DialogTitle>Thêm khách thuê mới</DialogTitle>
+                          </DialogHeader>
+                          <form onSubmit={handleAddTenant} className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="newTenantName">Tên khách thuê *</Label>
+                              <Input
+                                id="newTenantName"
+                                value={tenantForm.name}
+                                onChange={(e) => setTenantForm(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="Nguyễn Văn A"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="newTenantPhone">Số điện thoại *</Label>
+                                <Input
+                                  id="newTenantPhone"
+                                  value={tenantForm.phone}
+                                  onChange={(e) => setTenantForm(prev => ({ ...prev, phone: e.target.value }))}
+                                  placeholder="0901234567"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="newTenantId">Số CCCD *</Label>
+                                <Input
+                                  id="newTenantId"
+                                  value={tenantForm.idNumber}
+                                  onChange={(e) => setTenantForm(prev => ({ ...prev, idNumber: e.target.value }))}
+                                  placeholder="012345678901"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="newMoveInDate">Ngày vào ở</Label>
+                                <Input
+                                  id="newMoveInDate"
+                                  type="date"
+                                  value={tenantForm.moveInDate}
+                                  onChange={(e) => setTenantForm(prev => ({ ...prev, moveInDate: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="newDeposit">Tiền cọc</Label>
+                                <Input
+                                  id="newDeposit"
+                                  type="number"
+                                  value={tenantForm.deposit}
+                                  onChange={(e) => setTenantForm(prev => ({ ...prev, deposit: e.target.value }))}
+                                  placeholder="5000000"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-4">
+                              <Button type="button" variant="outline" onClick={() => setAddTenantDialogOpen(false)}>
+                                Hủy
+                              </Button>
+                              <Button type="submit" disabled={isSavingTenant}>
+                                {isSavingTenant && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Thêm khách
+                              </Button>
+                            </div>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   )}
                 </TabsContent>
@@ -632,7 +1029,12 @@ function RoomsContent() {
 
                   {/* Nút lưu khi bật custom pricing */}
                   {useCustomPricing && (
-                    <Button className="w-full">
+                    <Button
+                      className="w-full"
+                      onClick={handleSavePricing}
+                      disabled={isSavingPricing}
+                    >
+                      {isSavingPricing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                       <Save className="h-4 w-4 mr-2" />
                       Lưu cấu hình giá
                     </Button>
@@ -654,7 +1056,11 @@ function RoomsContent() {
                               <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
                                 <Camera className="h-8 w-8 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUploadImage('CCCD mặt trước')}
+                                >
                                   <Upload className="h-4 w-4 mr-2" />
                                   Upload ảnh
                                 </Button>
@@ -674,7 +1080,11 @@ function RoomsContent() {
                               <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
                                 <Camera className="h-8 w-8 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUploadImage('CCCD mặt sau')}
+                                >
                                   <Upload className="h-4 w-4 mr-2" />
                                   Upload ảnh
                                 </Button>
@@ -694,7 +1104,11 @@ function RoomsContent() {
                               <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
                                 <Camera className="h-8 w-8 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUploadImage('Cà vẹt xe')}
+                                >
                                   <Upload className="h-4 w-4 mr-2" />
                                   Upload ảnh
                                 </Button>
@@ -714,7 +1128,11 @@ function RoomsContent() {
                               <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
                                 <Camera className="h-8 w-8 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUploadImage('Hợp đồng')}
+                                >
                                   <Upload className="h-4 w-4 mr-2" />
                                   Upload ảnh
                                 </Button>
@@ -731,7 +1149,7 @@ function RoomsContent() {
                   )}
                 </TabsContent>
 
-                {/* Tab 3: Chốt số điện nước */}
+                {/* Tab 4: Chốt số điện nước */}
                 <TabsContent value="meter" className="mt-4 space-y-4">
                   {selectedRoom.tenant ? (
                     <>
@@ -768,6 +1186,8 @@ function RoomsContent() {
                             <Input
                               id="newElectricity"
                               type="number"
+                              value={meterForm.newElectricity}
+                              onChange={(e) => setMeterForm(prev => ({ ...prev, newElectricity: e.target.value }))}
                               placeholder={(() => {
                                 const last = getLastMeterReading(selectedRoom);
                                 return last ? String(last.electricityCurr + 100) : '0';
@@ -782,6 +1202,8 @@ function RoomsContent() {
                             <Input
                               id="newWater"
                               type="number"
+                              value={meterForm.newWater}
+                              onChange={(e) => setMeterForm(prev => ({ ...prev, newWater: e.target.value }))}
                               placeholder={(() => {
                                 const last = getLastMeterReading(selectedRoom);
                                 return last ? String(last.waterCurr + 5) : '0';
@@ -791,34 +1213,46 @@ function RoomsContent() {
                         </div>
                       </div>
 
-                      {/* Tính toán (preview) */}
+                      {/* Tính toán realtime */}
                       <Card className="p-4 bg-slate-50">
                         <h4 className="font-medium mb-3">Dự tính hóa đơn</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Tiền phòng</span>
-                            <span>{formatCurrency(selectedRoom.monthlyRent)}</span>
+                        {invoicePreview && (
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>Tiền phòng</span>
+                              <span>{formatCurrency(invoicePreview.rent)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>
+                                Tiền điện ({invoicePreview.electricityUsage} kWh × {formatCurrency(invoicePreview.electricityRate).replace('đ', '')}đ)
+                              </span>
+                              <span>{formatCurrency(invoicePreview.electricityCost)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>
+                                Tiền nước ({invoicePreview.waterUsage} m³ × {formatCurrency(invoicePreview.waterRate).replace('đ', '')}đ)
+                              </span>
+                              <span>{formatCurrency(invoicePreview.waterCost)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Phí wifi + rác</span>
+                              <span>{formatCurrency(invoicePreview.otherFees)}</span>
+                            </div>
+                            <div className="flex justify-between pt-2 border-t font-medium">
+                              <span>Tổng cộng</span>
+                              <span className="text-lg text-emerald-600">{formatCurrency(invoicePreview.total)}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Tiền điện (ước tính 100 kWh × 3,500đ)</span>
-                            <span>{formatCurrency(350000)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Tiền nước (ước tính 5 m³ × 15,000đ)</span>
-                            <span>{formatCurrency(75000)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Phí wifi + rác</span>
-                            <span>{formatCurrency(130000)}</span>
-                          </div>
-                          <div className="flex justify-between pt-2 border-t font-medium">
-                            <span>Tổng cộng</span>
-                            <span className="text-lg">{formatCurrency(selectedRoom.monthlyRent + 350000 + 75000 + 130000)}</span>
-                          </div>
-                        </div>
+                        )}
                       </Card>
 
-                      <Button className="w-full" size="lg">
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={handleCreateInvoice}
+                        disabled={isCreatingInvoice}
+                      >
+                        {isCreatingInvoice && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         <Calculator className="h-4 w-4 mr-2" />
                         Tính tiền & Xuất hóa đơn
                       </Button>

@@ -53,7 +53,6 @@ import {
   Wifi,
   Trash2,
   Car,
-  Building2,
   CreditCard,
   CheckCircle,
   AlertCircle,
@@ -62,8 +61,10 @@ import {
   Eye,
   EyeOff,
   Cloud,
-  Banknote
+  Banknote,
+  Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Mock data for owner profile
 const ownerProfile = {
@@ -124,13 +125,145 @@ export default function SettingsPage() {
   const [createStaffOpen, setCreateStaffOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
+  // Loading states
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSavingPricing, setIsSavingPricing] = useState(false);
+  const [isSavingBank, setIsSavingBank] = useState(false);
+  const [isCreatingStaff, setIsCreatingStaff] = useState(false);
+  const [isDeletingStaff, setIsDeletingStaff] = useState(false);
+  const [isChangingStaffPassword, setIsChangingStaffPassword] = useState(false);
+
   // Form states
   const [profile, setProfile] = useState(ownerProfile);
   const [pricing, setPricing] = useState(defaultPricing);
   const [bank, setBank] = useState(bankConfig);
 
+  // Password form states
+  const [passwordForm, setPasswordForm] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
+
+  // Staff form states
+  const [staffForm, setStaffForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount);
+  };
+
+  // Event handlers
+  const handleSaveProfile = async () => {
+    if (!profile.name || !profile.phone || !profile.email) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã cập nhật thông tin cá nhân');
+    setIsSavingProfile(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
+      toast.error('Vui lòng điền đầy đủ mật khẩu');
+      return;
+    }
+
+    if (passwordForm.new !== passwordForm.confirm) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    if (passwordForm.new.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã đổi mật khẩu thành công');
+    setChangePasswordOpen(false);
+    setPasswordForm({ current: '', new: '', confirm: '' });
+    setIsChangingPassword(false);
+  };
+
+  const handleSavePricing = async () => {
+    setIsSavingPricing(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã lưu bảng giá mẫu', {
+      description: 'Giá này sẽ áp dụng cho phòng mới'
+    });
+    setIsSavingPricing(false);
+  };
+
+  const handleSaveBank = async () => {
+    if (!bank.accountNumber || !bank.accountName) {
+      toast.error('Vui lòng điền số tài khoản và tên chủ TK');
+      return;
+    }
+
+    setIsSavingBank(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã lưu thông tin ngân hàng');
+    setIsSavingBank(false);
+  };
+
+  const handleCreateStaff = async () => {
+    if (!staffForm.name || !staffForm.email || !staffForm.password) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    if (staffForm.password !== staffForm.confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setIsCreatingStaff(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã tạo tài khoản nhân viên', {
+      description: `Đã gửi thông tin đăng nhập đến ${staffForm.email}`
+    });
+    setHasStaff(true);
+    setCreateStaffOpen(false);
+    setStaffForm({ name: '', email: '', password: '', confirmPassword: '' });
+    setIsCreatingStaff(false);
+  };
+
+  const handleDeleteStaff = async () => {
+    setIsDeletingStaff(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã xóa tài khoản nhân viên');
+    setHasStaff(false);
+    setIsDeletingStaff(false);
+  };
+
+  const handleChangeStaffPassword = async () => {
+    setIsChangingStaffPassword(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã đổi mật khẩu nhân viên');
+    setIsChangingStaffPassword(false);
+  };
+
+  const handleUploadAvatar = () => {
+    toast.info('Đang mở trình chọn file...', {
+      description: 'Chọn ảnh đại diện mới'
+    });
   };
 
   return (
@@ -188,6 +321,7 @@ export default function SettingsPage() {
                     size="icon"
                     variant="outline"
                     className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                    onClick={handleUploadAvatar}
                   >
                     <Camera className="h-4 w-4" />
                   </Button>
@@ -241,7 +375,8 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button>
+                <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+                  {isSavingProfile && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   <Save className="h-4 w-4 mr-2" />
                   Cập nhật thông tin
                 </Button>
@@ -267,6 +402,8 @@ export default function SettingsPage() {
                             id="currentPassword"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
+                            value={passwordForm.current}
+                            onChange={(e) => setPasswordForm(prev => ({ ...prev, current: e.target.value }))}
                           />
                           <Button
                             type="button"
@@ -285,6 +422,8 @@ export default function SettingsPage() {
                           id="newPassword"
                           type="password"
                           placeholder="••••••••"
+                          value={passwordForm.new}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, new: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -293,6 +432,8 @@ export default function SettingsPage() {
                           id="confirmPassword"
                           type="password"
                           placeholder="••••••••"
+                          value={passwordForm.confirm}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))}
                         />
                       </div>
                     </div>
@@ -300,7 +441,8 @@ export default function SettingsPage() {
                       <Button variant="outline" onClick={() => setChangePasswordOpen(false)}>
                         Hủy
                       </Button>
-                      <Button onClick={() => setChangePasswordOpen(false)}>
+                      <Button onClick={handleChangePassword} disabled={isChangingPassword}>
+                        {isChangingPassword && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         Đổi mật khẩu
                       </Button>
                     </DialogFooter>
@@ -473,7 +615,8 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <Button size="lg">
+              <Button size="lg" onClick={handleSavePricing} disabled={isSavingPricing}>
+                {isSavingPricing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 <Save className="h-4 w-4 mr-2" />
                 Lưu cấu hình
               </Button>
@@ -552,7 +695,10 @@ export default function SettingsPage() {
                           </div>
                         </div>
                         <DialogFooter>
-                          <Button>Cập nhật mật khẩu</Button>
+                          <Button onClick={handleChangeStaffPassword} disabled={isChangingStaffPassword}>
+                            {isChangingStaffPassword && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Cập nhật mật khẩu
+                          </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
@@ -576,8 +722,10 @@ export default function SettingsPage() {
                           <AlertDialogCancel>Hủy</AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={() => setHasStaff(false)}
+                            onClick={handleDeleteStaff}
+                            disabled={isDeletingStaff}
                           >
+                            {isDeletingStaff && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                             Xóa tài khoản
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -607,26 +755,50 @@ export default function SettingsPage() {
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
                           <Label htmlFor="staffName">Họ và tên</Label>
-                          <Input id="staffName" placeholder="Nhập tên nhân viên" />
+                          <Input
+                            id="staffName"
+                            placeholder="Nhập tên nhân viên"
+                            value={staffForm.name}
+                            onChange={(e) => setStaffForm(prev => ({ ...prev, name: e.target.value }))}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="staffEmail">Email đăng nhập</Label>
-                          <Input id="staffEmail" type="email" placeholder="nhanvien@email.com" />
+                          <Input
+                            id="staffEmail"
+                            type="email"
+                            placeholder="nhanvien@email.com"
+                            value={staffForm.email}
+                            onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="staffPassword">Mật khẩu</Label>
-                          <Input id="staffPassword" type="password" placeholder="••••••••" />
+                          <Input
+                            id="staffPassword"
+                            type="password"
+                            placeholder="••••••••"
+                            value={staffForm.password}
+                            onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="staffConfirmPwd">Xác nhận mật khẩu</Label>
-                          <Input id="staffConfirmPwd" type="password" placeholder="••••••••" />
+                          <Input
+                            id="staffConfirmPwd"
+                            type="password"
+                            placeholder="••••••••"
+                            value={staffForm.confirmPassword}
+                            onChange={(e) => setStaffForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          />
                         </div>
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setCreateStaffOpen(false)}>
                           Hủy
                         </Button>
-                        <Button onClick={() => { setHasStaff(true); setCreateStaffOpen(false); }}>
+                        <Button onClick={handleCreateStaff} disabled={isCreatingStaff}>
+                          {isCreatingStaff && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                           Tạo tài khoản
                         </Button>
                       </DialogFooter>
@@ -699,7 +871,8 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
-              <Button>
+              <Button onClick={handleSaveBank} disabled={isSavingBank}>
+                {isSavingBank && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 <Save className="h-4 w-4 mr-2" />
                 Lưu thông tin ngân hàng
               </Button>

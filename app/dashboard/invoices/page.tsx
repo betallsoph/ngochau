@@ -51,21 +51,17 @@ import {
   MoreHorizontal,
   Check,
   Printer,
-  Download,
   Share2,
   Building2,
-  Phone,
-  Calendar,
   Zap,
   Droplet,
   Wifi,
-  Trash2,
-  Car,
   QrCode,
   Copy,
-  ExternalLink
+  Loader2
 } from 'lucide-react';
 import { mockInvoices, mockRooms, buildings, getBuildingById, getRoomById, defaultPricingTemplate, type Invoice } from '@/lib/data';
+import { toast } from 'sonner';
 
 type InvoiceStatus = 'paid' | 'pending' | 'overdue';
 
@@ -84,7 +80,7 @@ const bankInfo = {
 // Helper function to get pricing for a room
 // Priority: Room custom pricing > Default template
 const getRoomPricing = (roomId: number) => {
-  const room = getRoomById(roomId);
+  const room = getRoomById(mockRooms, roomId);
   if (room?.customPricing?.useCustomPricing) {
     return {
       electricityRate: room.customPricing.electricityRate ?? defaultPricingTemplate.electricityRate,
@@ -112,6 +108,11 @@ export default function InvoicesPage() {
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+
+  // Loading states
+  const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [isSendingZalo, setIsSendingZalo] = useState(false);
 
   const filteredInvoices = useMemo(() => {
     return mockInvoices.filter(invoice => {
@@ -181,6 +182,97 @@ export default function InvoicesPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    toast.success('Đã sao chép vào clipboard');
+  };
+
+  // Event handlers
+  const handleCreateInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedBuilding || !selectedRoom) {
+      toast.error('Vui lòng chọn tòa nhà và phòng');
+      return;
+    }
+
+    setIsCreatingInvoice(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã tạo hóa đơn thành công', {
+      description: `Phòng ${selectedRoomData?.roomNumber} - ${selectedRoomData?.tenant?.name}`,
+    });
+
+    setDialogOpen(false);
+    setSelectedBuilding('');
+    setSelectedRoom('');
+    setIsCreatingInvoice(false);
+  };
+
+  const handleMarkAsPaid = async (invoice: Invoice) => {
+    setIsMarkingPaid(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.success('Đã xác nhận thanh toán', {
+      description: `Hóa đơn ${invoice.id} - ${formatCurrency(invoice.totalAmount)}`,
+    });
+
+    setIsMarkingPaid(false);
+    setDetailSheetOpen(false);
+  };
+
+  const handleSendZalo = async (invoice: Invoice) => {
+    setIsSendingZalo(true);
+
+    toast.info('Đang khởi tạo liên kết Zalo...', {
+      description: `Gửi hóa đơn ${invoice.id} cho ${invoice.tenantName}`,
+    });
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // In real app, this would open Zalo with pre-filled message
+    const zaloMessage = `Xin chào ${invoice.tenantName},\n\nHóa đơn tiền phòng tháng ${invoice.month.split('-')[1]}/${invoice.month.split('-')[0]}:\n- Tổng tiền: ${formatCurrency(invoice.totalAmount)}\n- Hạn thanh toán: ${formatDate(invoice.dueDate)}\n\nVui lòng thanh toán đúng hạn. Xin cảm ơn!`;
+
+    // Open Zalo (this is a simulation)
+    toast.success('Đã mở Zalo', {
+      description: 'Tin nhắn đã được chuẩn bị sẵn',
+    });
+
+    setIsSendingZalo(false);
+  };
+
+  const handlePrint = () => {
+    toast.info('Đang chuẩn bị in...', {
+      description: 'Mở hộp thoại in trong giây lát',
+    });
+    // In real app, this would trigger print dialog
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const handleShare = async () => {
+    if (selectedInvoice) {
+      const shareText = `Hóa đơn ${selectedInvoice.id} - P.${selectedInvoice.roomNumber} - ${formatCurrency(selectedInvoice.totalAmount)}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Hóa đơn tiền phòng',
+            text: shareText,
+          });
+          toast.success('Đã chia sẻ thành công');
+        } catch {
+          copyToClipboard(shareText);
+        }
+      } else {
+        copyToClipboard(shareText);
+        toast.info('Đã sao chép link để chia sẻ');
+      }
+    }
   };
 
   return (
@@ -204,7 +296,7 @@ export default function InvoicesPage() {
             <DialogHeader>
               <DialogTitle>Tạo hóa đơn mới</DialogTitle>
             </DialogHeader>
-            <form className="space-y-4 mt-4">
+            <form onSubmit={handleCreateInvoice} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="building">Tòa nhà</Label>
@@ -290,7 +382,8 @@ export default function InvoicesPage() {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="submit" onClick={(e) => { e.preventDefault(); setDialogOpen(false); }}>
+                <Button type="submit" disabled={isCreatingInvoice}>
+                  {isCreatingInvoice && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Tạo hóa đơn
                 </Button>
               </div>
@@ -451,17 +544,20 @@ export default function InvoicesPage() {
                               <Eye className="h-4 w-4 mr-2" />
                               Xem chi tiết
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSendZalo(invoice)}>
                               <Send className="h-4 w-4 mr-2" />
                               Gửi Zalo
                             </DropdownMenuItem>
                             {invoice.status !== 'paid' && (
-                              <DropdownMenuItem className="text-emerald-600">
+                              <DropdownMenuItem
+                                className="text-emerald-600"
+                                onClick={() => handleMarkAsPaid(invoice)}
+                              >
                                 <Check className="h-4 w-4 mr-2" />
                                 Xác nhận đã thu
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={handlePrint}>
                               <Printer className="h-4 w-4 mr-2" />
                               In hóa đơn
                             </DropdownMenuItem>
@@ -489,11 +585,11 @@ export default function InvoicesPage() {
               <div className="sticky top-0 z-10 bg-background border-b p-4 flex items-center justify-between">
                 <SheetTitle className="text-lg">Chi tiết hóa đơn</SheetTitle>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handlePrint}>
                     <Printer className="h-4 w-4 mr-1" />
                     In
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleShare}>
                     <Share2 className="h-4 w-4 mr-1" />
                     Chia sẻ
                   </Button>
@@ -713,11 +809,22 @@ export default function InvoicesPage() {
 
                     {/* Action Buttons */}
                     <div className="flex gap-3">
-                      <Button className="flex-1" variant="outline">
+                      <Button
+                        className="flex-1"
+                        variant="outline"
+                        onClick={() => handleSendZalo(selectedInvoice)}
+                        disabled={isSendingZalo}
+                      >
+                        {isSendingZalo && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         <Send className="h-4 w-4 mr-2" />
                         Gửi Zalo
                       </Button>
-                      <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                      <Button
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => handleMarkAsPaid(selectedInvoice)}
+                        disabled={isMarkingPaid}
+                      >
+                        {isMarkingPaid && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         <Check className="h-4 w-4 mr-2" />
                         Xác nhận đã thu
                       </Button>

@@ -65,7 +65,7 @@ import {
   Copy,
   ExternalLink
 } from 'lucide-react';
-import { mockInvoices, mockRooms, buildings, getBuildingById, type Invoice } from '@/lib/data';
+import { mockInvoices, mockRooms, buildings, getBuildingById, getRoomById, defaultPricingTemplate, type Invoice } from '@/lib/data';
 
 type InvoiceStatus = 'paid' | 'pending' | 'overdue';
 
@@ -79,6 +79,26 @@ const bankInfo = {
   accountNumber: '1234567890',
   accountName: 'NGUYEN VAN A',
   branch: 'Chi nhánh TP.HCM'
+};
+
+// Helper function to get pricing for a room
+// Priority: Room custom pricing > Default template
+const getRoomPricing = (roomId: number) => {
+  const room = getRoomById(roomId);
+  if (room?.customPricing?.useCustomPricing) {
+    return {
+      electricityRate: room.customPricing.electricityRate ?? defaultPricingTemplate.electricityRate,
+      waterRate: room.customPricing.waterRate ?? defaultPricingTemplate.waterRate,
+      wifiFee: room.customPricing.wifiFee ?? defaultPricingTemplate.wifiFee,
+      trashFee: room.customPricing.trashFee ?? defaultPricingTemplate.trashFee,
+      parkingFee: room.customPricing.parkingFee ?? defaultPricingTemplate.parkingFee,
+      isCustom: true
+    };
+  }
+  return {
+    ...defaultPricingTemplate,
+    isCustom: false
+  };
 };
 
 export default function InvoicesPage() {
@@ -552,43 +572,70 @@ export default function InvoicesPage() {
                   </div>
 
                   {/* Electricity */}
-                  <div className="py-2 border-b">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-yellow-500" />
-                        <span>Tiền điện</span>
+                  {(() => {
+                    const pricing = getRoomPricing(selectedInvoice.roomId);
+                    return (
+                      <div className="py-2 border-b">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-yellow-500" />
+                            <span>Tiền điện</span>
+                            {pricing.isCustom && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">Giá riêng</Badge>
+                            )}
+                          </div>
+                          <span className="font-medium">{formatCurrency(selectedInvoice.electricityAmount)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 ml-6">
+                          {selectedInvoice.electricityUsage} kWh × {formatCurrency(pricing.electricityRate).replace('đ', '')}đ/kWh
+                        </p>
                       </div>
-                      <span className="font-medium">{formatCurrency(selectedInvoice.electricityAmount)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 ml-6">
-                      {selectedInvoice.electricityUsage} kWh × {formatCurrency(getBuildingById(selectedInvoice.buildingId)?.electricityRate || 3500).replace('đ', '')}đ/kWh
-                    </p>
-                  </div>
+                    );
+                  })()}
 
                   {/* Water */}
-                  <div className="py-2 border-b">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Droplet className="h-4 w-4 text-blue-500" />
-                        <span>Tiền nước</span>
+                  {(() => {
+                    const pricing = getRoomPricing(selectedInvoice.roomId);
+                    return (
+                      <div className="py-2 border-b">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Droplet className="h-4 w-4 text-blue-500" />
+                            <span>Tiền nước</span>
+                            {pricing.isCustom && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">Giá riêng</Badge>
+                            )}
+                          </div>
+                          <span className="font-medium">{formatCurrency(selectedInvoice.waterAmount)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 ml-6">
+                          {selectedInvoice.waterUsage} m³ × {formatCurrency(pricing.waterRate).replace('đ', '')}đ/m³
+                        </p>
                       </div>
-                      <span className="font-medium">{formatCurrency(selectedInvoice.waterAmount)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 ml-6">
-                      {selectedInvoice.waterUsage} m³ × {formatCurrency(getBuildingById(selectedInvoice.buildingId)?.waterRate || 15000).replace('đ', '')}đ/m³
-                    </p>
-                  </div>
+                    );
+                  })()}
 
                   {/* Other fees */}
-                  <div className="py-2 border-b">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Wifi className="h-4 w-4 text-slate-500" />
-                        <span>Phí khác (Wifi, Rác)</span>
+                  {(() => {
+                    const pricing = getRoomPricing(selectedInvoice.roomId);
+                    return (
+                      <div className="py-2 border-b">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Wifi className="h-4 w-4 text-slate-500" />
+                            <span>Phí khác (Wifi, Rác)</span>
+                            {pricing.isCustom && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">Giá riêng</Badge>
+                            )}
+                          </div>
+                          <span className="font-medium">{formatCurrency(selectedInvoice.otherFees)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 ml-6">
+                          Wifi: {formatCurrency(pricing.wifiFee)} + Rác: {formatCurrency(pricing.trashFee)}
+                        </p>
                       </div>
-                      <span className="font-medium">{formatCurrency(selectedInvoice.otherFees)}</span>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Total */}
                   <div className="bg-slate-900 text-white rounded-lg p-4">

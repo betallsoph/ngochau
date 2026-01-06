@@ -13,5 +13,6 @@ export {
   getBuildingById,
   getRoomById,
   generateRooms,
-  generateInvoices
+  generateInvoices,
+  defaultPricingTemplate
 } from './mock-data';

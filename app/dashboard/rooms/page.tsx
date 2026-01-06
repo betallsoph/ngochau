@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import {
@@ -37,8 +38,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Plus, User, Zap, Droplet, Camera, FileText, Upload, Calculator, Phone, Calendar, CreditCard, Home } from 'lucide-react';
-import { mockRooms, buildings, getBuildingById, type Room, type RoomStatus } from '@/lib/data';
+import { Search, Plus, User, Zap, Droplet, Camera, FileText, Upload, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save } from 'lucide-react';
+import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus, type RoomPricing } from '@/lib/data';
 
 type FilterStatus = 'all' | 'empty' | 'occupied' | 'debt';
 
@@ -53,6 +54,16 @@ function RoomsContent() {
   const [newRoomBuilding, setNewRoomBuilding] = useState<string>('');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Custom pricing state for selected room
+  const [useCustomPricing, setUseCustomPricing] = useState(false);
+  const [customPricing, setCustomPricing] = useState({
+    electricityRate: defaultPricingTemplate.electricityRate,
+    waterRate: defaultPricingTemplate.waterRate,
+    wifiFee: defaultPricingTemplate.wifiFee,
+    trashFee: defaultPricingTemplate.trashFee,
+    parkingFee: defaultPricingTemplate.parkingFee,
+  });
 
   const filteredRooms = useMemo(() => {
     return mockRooms.filter(room => {
@@ -95,6 +106,26 @@ function RoomsContent() {
 
   const handleRoomClick = (room: Room) => {
     setSelectedRoom(room);
+    // Load room's custom pricing if exists
+    if (room.customPricing?.useCustomPricing) {
+      setUseCustomPricing(true);
+      setCustomPricing({
+        electricityRate: room.customPricing.electricityRate ?? defaultPricingTemplate.electricityRate,
+        waterRate: room.customPricing.waterRate ?? defaultPricingTemplate.waterRate,
+        wifiFee: room.customPricing.wifiFee ?? defaultPricingTemplate.wifiFee,
+        trashFee: room.customPricing.trashFee ?? defaultPricingTemplate.trashFee,
+        parkingFee: room.customPricing.parkingFee ?? defaultPricingTemplate.parkingFee,
+      });
+    } else {
+      setUseCustomPricing(false);
+      setCustomPricing({
+        electricityRate: defaultPricingTemplate.electricityRate,
+        waterRate: defaultPricingTemplate.waterRate,
+        wifiFee: defaultPricingTemplate.wifiFee,
+        trashFee: defaultPricingTemplate.trashFee,
+        parkingFee: defaultPricingTemplate.parkingFee,
+      });
+    }
     setSheetOpen(true);
   };
 
@@ -364,27 +395,34 @@ function RoomsContent() {
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="w-full grid grid-cols-3 h-12 p-1 bg-slate-100">
+                  <TabsList className="w-full grid grid-cols-4 h-12 p-1 bg-slate-100">
                     <TabsTrigger
                       value="info"
                       className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
                     >
                       <User className="h-4 w-4" />
-                      <span>Thông tin</span>
+                      <span className="hidden sm:inline">Thông tin</span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="pricing"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      <span className="hidden sm:inline">Giá dịch vụ</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="documents"
                       className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
                     >
                       <Camera className="h-4 w-4" />
-                      <span>Hồ sơ ảnh</span>
+                      <span className="hidden sm:inline">Hồ sơ</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="meter"
                       className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
                     >
                       <Zap className="h-4 w-4" />
-                      <span>Điện nước</span>
+                      <span className="hidden sm:inline">Điện nước</span>
                     </TabsTrigger>
                   </TabsList>
 
@@ -456,7 +494,152 @@ function RoomsContent() {
                   )}
                 </TabsContent>
 
-                {/* Tab 2: Hồ sơ ảnh */}
+                {/* Tab 2: Cấu hình giá dịch vụ */}
+                <TabsContent value="pricing" className="mt-4 space-y-4">
+                  {/* Switch để bật/tắt giá riêng */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-slate-50">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="custom-pricing" className="text-base font-medium">
+                        Tùy chỉnh giá riêng cho phòng này
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {useCustomPricing
+                          ? 'Đang sử dụng giá riêng'
+                          : 'Đang sử dụng giá mẫu từ Settings'}
+                      </p>
+                    </div>
+                    <Switch
+                      id="custom-pricing"
+                      checked={useCustomPricing}
+                      onCheckedChange={setUseCustomPricing}
+                    />
+                  </div>
+
+                  {/* Bảng giá - readonly khi OFF, editable khi ON */}
+                  <Card>
+                    <CardContent className="p-4 space-y-4">
+                      {/* Điện */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          Giá điện (đ/kWh)
+                        </Label>
+                        {useCustomPricing ? (
+                          <Input
+                            type="number"
+                            value={customPricing.electricityRate}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              electricityRate: Number(e.target.value)
+                            }))}
+                          />
+                        ) : (
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center text-muted-foreground">
+                            {formatCurrency(defaultPricingTemplate.electricityRate)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Nước */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Droplet className="h-4 w-4 text-blue-500" />
+                          Giá nước (đ/m³)
+                        </Label>
+                        {useCustomPricing ? (
+                          <Input
+                            type="number"
+                            value={customPricing.waterRate}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              waterRate: Number(e.target.value)
+                            }))}
+                          />
+                        ) : (
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center text-muted-foreground">
+                            {formatCurrency(defaultPricingTemplate.waterRate)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Wifi */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Wifi className="h-4 w-4 text-purple-500" />
+                          Phí Wifi (đ/tháng)
+                        </Label>
+                        {useCustomPricing ? (
+                          <Input
+                            type="number"
+                            value={customPricing.wifiFee}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              wifiFee: Number(e.target.value)
+                            }))}
+                          />
+                        ) : (
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center text-muted-foreground">
+                            {formatCurrency(defaultPricingTemplate.wifiFee)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rác */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Trash2 className="h-4 w-4 text-green-600" />
+                          Phí rác (đ/tháng)
+                        </Label>
+                        {useCustomPricing ? (
+                          <Input
+                            type="number"
+                            value={customPricing.trashFee}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              trashFee: Number(e.target.value)
+                            }))}
+                          />
+                        ) : (
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center text-muted-foreground">
+                            {formatCurrency(defaultPricingTemplate.trashFee)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Gửi xe */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Car className="h-4 w-4 text-slate-600" />
+                          Phí gửi xe (đ/tháng)
+                        </Label>
+                        {useCustomPricing ? (
+                          <Input
+                            type="number"
+                            value={customPricing.parkingFee}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              parkingFee: Number(e.target.value)
+                            }))}
+                          />
+                        ) : (
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center text-muted-foreground">
+                            {formatCurrency(defaultPricingTemplate.parkingFee)}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Nút lưu khi bật custom pricing */}
+                  {useCustomPricing && (
+                    <Button className="w-full">
+                      <Save className="h-4 w-4 mr-2" />
+                      Lưu cấu hình giá
+                    </Button>
+                  )}
+                </TabsContent>
+
+                {/* Tab 3: Hồ sơ ảnh */}
                 <TabsContent value="documents" className="mt-4 space-y-4">
                   {selectedRoom.tenant ? (
                     <div className="space-y-4">

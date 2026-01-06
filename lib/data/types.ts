@@ -37,6 +37,16 @@ export interface MeterReading {
   recordedAt: string;
 }
 
+// Custom pricing for a room (overrides default template)
+export interface RoomPricing {
+  useCustomPricing: boolean;
+  electricityRate?: number; // đ/kWh
+  waterRate?: number; // đ/m³
+  wifiFee?: number; // đ/tháng
+  trashFee?: number; // đ/tháng
+  parkingFee?: number; // đ/tháng
+}
+
 export interface Room {
   id: number;
   buildingId: string;
@@ -48,6 +58,7 @@ export interface Room {
   debtAmount?: number;
   tenant?: Tenant;
   meterReadings: MeterReading[];
+  customPricing?: RoomPricing; // Giá riêng cho phòng này
 }
 
 export interface Invoice {

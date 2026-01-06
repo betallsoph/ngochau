@@ -7,8 +7,18 @@ import type {
   MeterReading,
   RoomStatus,
   DashboardStats,
-  BuildingStats
+  BuildingStats,
+  RoomPricing
 } from './types';
+
+// Default pricing template (used when room doesn't have custom pricing)
+export const defaultPricingTemplate = {
+  electricityRate: 3500, // đ/kWh
+  waterRate: 15000, // đ/m³
+  wifiFee: 100000, // đ/tháng
+  trashFee: 30000, // đ/tháng
+  parkingFee: 100000, // đ/tháng
+};
 
 // Vietnamese names for mock data
 const vietnameseFirstNames = [

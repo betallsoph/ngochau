@@ -394,29 +394,29 @@ export default function InvoicesPage() {
       </div>
 
       {/* Simple Stats with unified border color */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-50 rounded-lg shrink-0">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Tổng phải thu</p>
-                <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Tổng phải thu</p>
+                <p className="text-base sm:text-xl font-bold truncate">{formatCurrency(stats.totalAmount)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-blue-600" />
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-50 rounded-lg shrink-0">
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Đã thu</p>
-                <p className="text-xl font-bold">{formatCurrency(stats.paidAmount)}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Đã thu</p>
+                <p className="text-base sm:text-xl font-bold truncate">{formatCurrency(stats.paidAmount)}</p>
               </div>
             </div>
           </CardContent>
@@ -484,19 +484,19 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* Desktop Table */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Mã HĐ</TableHead>
-                <TableHead className="hidden sm:table-cell">Tòa nhà</TableHead>
+                <TableHead>Tòa nhà</TableHead>
                 <TableHead>Phòng</TableHead>
-                <TableHead className="hidden md:table-cell">Khách thuê</TableHead>
+                <TableHead className="hidden lg:table-cell">Khách thuê</TableHead>
                 <TableHead className="hidden lg:table-cell">Kỳ HĐ</TableHead>
                 <TableHead className="text-right">Tổng tiền</TableHead>
-                <TableHead className="hidden md:table-cell">Hạn thu</TableHead>
+                <TableHead className="hidden lg:table-cell">Hạn thu</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
@@ -507,18 +507,18 @@ export default function InvoicesPage() {
                 return (
                   <TableRow key={invoice.id} className="group">
                     <TableCell className="font-mono text-sm">{invoice.id}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-muted-foreground">
+                    <TableCell className="text-muted-foreground">
                       {building?.shortName}
                     </TableCell>
                     <TableCell className="font-medium">P.{invoice.roomNumber}</TableCell>
-                    <TableCell className="hidden md:table-cell">{invoice.tenantName}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{invoice.tenantName}</TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground">
                       {invoice.month.split('-')[1]}/{invoice.month.split('-')[0]}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(invoice.totalAmount)}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell text-muted-foreground">
                       {formatDate(invoice.dueDate)}
                     </TableCell>
                     <TableCell>
@@ -592,6 +592,86 @@ export default function InvoicesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filteredInvoices.map((invoice) => {
+          const building = getBuildingById(invoice.buildingId);
+          return (
+            <Card
+              key={invoice.id}
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => handleViewDetail(invoice)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">P.{invoice.roomNumber}</span>
+                      <span className="text-xs text-muted-foreground">{building?.shortName}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{invoice.tenantName}</p>
+                  </div>
+                  <div className="shrink-0">
+                    {getStatusBadge(invoice.status)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="text-base font-bold">{formatCurrency(invoice.totalAmount)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Hạn: {formatDate(invoice.dueDate)}
+                    </p>
+                  </div>
+                  {invoice.status !== 'paid' && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendZalo(invoice);
+                        }}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-emerald-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsPaid(invoice);
+                        }}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+        {filteredInvoices.length === 0 && (
+          <div className="p-12 text-center">
+            <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground font-medium mb-2">Không tìm thấy hóa đơn</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              {search || statusFilter !== 'all' || buildingFilter !== 'all' || monthFilter !== 'all'
+                ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                : 'Tạo hóa đơn mới từ trang Quản lý phòng'}
+            </p>
+            {!search && statusFilter === 'all' && buildingFilter === 'all' && monthFilter === 'all' && (
+              <Button onClick={() => setDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Tạo hóa đơn đầu tiên
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Invoice Detail Sheet */}
       <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>

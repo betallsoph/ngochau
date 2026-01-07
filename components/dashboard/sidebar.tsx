@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -24,8 +24,6 @@ import {
   Receipt,
   Settings,
   ChevronLeft,
-  Menu,
-  X,
   Bell,
   User,
   LogOut,
@@ -34,7 +32,7 @@ import {
   Check,
   Clock
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
 interface SidebarProps {
@@ -104,26 +102,11 @@ const mockNotifications = [
 
 export function Sidebar({ className }: SidebarProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
   const pathname = usePathname();
 
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
-  // Close mobile menu on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -162,48 +145,16 @@ export function Sidebar({ className }: SidebarProps) {
   };
 
   return (
-    <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden bg-white shadow-md"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-
-      {/* Mobile overlay */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{
-          width: isCollapsed ? 64 : 256,
-          x: 0
-        }}
-        className={cn(
-          'fixed left-0 top-0 z-50 h-screen bg-slate-50 border-r border-slate-200 flex flex-col',
-          'transition-transform duration-300 ease-in-out',
-          // Mobile: slide in/out
-          isOpen ? 'translate-x-0' : '-translate-x-full',
-          // Desktop: always visible
-          'lg:translate-x-0 lg:relative lg:z-0',
-          className
-        )}
-      >
+    <motion.aside
+      initial={false}
+      animate={{
+        width: isCollapsed ? 64 : 256,
+      }}
+      className={cn(
+        'h-screen bg-slate-50 border-r border-slate-200 flex flex-col',
+        className
+      )}
+    >
         {/* Header - Profile & Notifications */}
         <div className="border-b border-slate-200 p-3">
           <div className="flex items-center gap-2">
@@ -212,7 +163,7 @@ export function Sidebar({ className }: SidebarProps) {
               <DropdownMenuTrigger asChild>
                 <button className={cn(
                   'flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors flex-1 text-left',
-                  isCollapsed && 'lg:justify-center lg:p-2'
+                  isCollapsed && 'justify-center p-2'
                 )}>
                   <Avatar className="h-10 w-10 shrink-0">
                     <AvatarImage src="/avatar.jpg" alt="Admin" />
@@ -222,7 +173,7 @@ export function Sidebar({ className }: SidebarProps) {
                   </Avatar>
                   <div className={cn(
                     'flex-1 min-w-0',
-                    isCollapsed && 'lg:hidden'
+                    isCollapsed && 'hidden'
                   )}>
                     <p className="text-sm font-medium truncate">Ngọc Hậu</p>
                     <p className="text-xs text-muted-foreground truncate">Chủ trọ</p>
@@ -260,7 +211,7 @@ export function Sidebar({ className }: SidebarProps) {
                   size="icon"
                   className={cn(
                     'relative shrink-0',
-                    isCollapsed && 'lg:hidden'
+                    isCollapsed && 'hidden'
                   )}
                 >
                   <Bell className="h-5 w-5" />
@@ -347,7 +298,7 @@ export function Sidebar({ className }: SidebarProps) {
                     variant={isActive(item.href) ? 'secondary' : 'ghost'}
                     className={cn(
                       'w-full justify-start gap-3 h-11 transition-all duration-200',
-                      isCollapsed && 'lg:justify-center lg:px-2',
+                      isCollapsed && 'justify-center px-2',
                       isActive(item.href)
                         ? 'bg-slate-800 text-white hover:bg-slate-700 hover:text-white font-medium'
                         : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900'
@@ -362,7 +313,7 @@ export function Sidebar({ className }: SidebarProps) {
                       }}
                       className={cn(
                         'overflow-hidden whitespace-nowrap',
-                        isCollapsed && 'lg:hidden'
+                        isCollapsed && 'hidden'
                       )}
                     >
                       {item.title}
@@ -380,8 +331,7 @@ export function Sidebar({ className }: SidebarProps) {
             variant="ghost"
             className={cn(
               'w-full justify-start gap-3 h-10 text-slate-600 hover:bg-slate-200 hover:text-slate-900',
-              isCollapsed && 'lg:justify-center lg:px-2',
-              'hidden lg:flex'
+              isCollapsed && 'justify-center px-2'
             )}
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
@@ -403,7 +353,6 @@ export function Sidebar({ className }: SidebarProps) {
             </motion.span>
           </Button>
         </div>
-      </motion.aside>
-    </>
+    </motion.aside>
   );
 }

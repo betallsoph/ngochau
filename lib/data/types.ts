@@ -51,10 +51,11 @@ export interface Room {
   id: number;
   buildingId: string;
   roomNumber: string;
-  floor: number;
+  roomCode?: string; // Mã căn hộ
+  floor?: number;
   status: RoomStatus;
   monthlyRent: number;
-  area: number; // m²
+  area?: number; // m²
   debtAmount?: number;
   tenant?: Tenant;
   meterReadings: MeterReading[];

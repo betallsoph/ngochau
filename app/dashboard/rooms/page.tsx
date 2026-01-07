@@ -50,7 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Search, Plus, User, Zap, Droplet, FileText, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save, Loader2, LogOut, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ImageIcon, Camera } from 'lucide-react';
+import { Search, Plus, User, Zap, Droplet, FileText, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save, Loader2, LogOut, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ImageIcon, Camera, X, Building2 } from 'lucide-react';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus } from '@/lib/data';
 import { toast } from 'sonner';
@@ -66,12 +66,9 @@ function TableRowSkeleton() {
     <TableRow>
       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
       <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
       <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
     </TableRow>
   );
 }
@@ -81,29 +78,18 @@ function CardSkeleton() {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-4 w-12" />
-            </div>
-            <Skeleton className="h-4 w-24" />
-          </div>
-          <Skeleton className="h-5 w-20" />
-        </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex items-start justify-between mb-2">
           <div className="space-y-1">
-            <Skeleton className="h-3 w-12" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-4 w-10" />
+            </div>
             <Skeleton className="h-4 w-16" />
           </div>
-          <div className="space-y-1">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-4 w-14" />
-          </div>
-          <div className="space-y-1">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-4 w-14" />
-          </div>
+          <Skeleton className="h-5 w-24" />
+        </div>
+        <div className="pt-2 border-t">
+          <Skeleton className="h-4 w-32" />
         </div>
       </CardContent>
     </Card>
@@ -114,6 +100,7 @@ function CardSkeleton() {
 interface NewRoomForm {
   building: string;
   roomNumber: string;
+  roomCode: string;
   floor: string;
   monthlyRent: string;
   area: string;
@@ -161,6 +148,7 @@ function RoomsContent() {
   const [newRoomForm, setNewRoomForm] = useState<NewRoomForm>({
     building: '',
     roomNumber: '',
+    roomCode: '',
     floor: '',
     monthlyRent: '',
     area: '',
@@ -373,6 +361,7 @@ function RoomsContent() {
     setNewRoomForm({
       building: '',
       roomNumber: '',
+      roomCode: '',
       floor: '',
       monthlyRent: '',
       area: '',
@@ -505,22 +494,43 @@ function RoomsContent() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="roomNumber">Số phòng</Label>
+                  <Label htmlFor="roomNumber">Tên phòng</Label>
                   <Input
                     id="roomNumber"
-                    placeholder="VD: 101"
+                    placeholder="VD: Phòng Hồng, A1..."
                     value={newRoomForm.roomNumber}
                     onChange={(e) => setNewRoomForm(prev => ({ ...prev, roomNumber: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="floor">Tầng</Label>
+                  <Label htmlFor="roomCode">Mã căn hộ</Label>
+                  <Input
+                    id="roomCode"
+                    placeholder="VD: 101, A01..."
+                    value={newRoomForm.roomCode}
+                    onChange={(e) => setNewRoomForm(prev => ({ ...prev, roomCode: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="floor">Tầng <span className="text-muted-foreground text-xs">(tùy chọn)</span></Label>
                   <Input
                     id="floor"
                     type="number"
                     placeholder="1"
                     value={newRoomForm.floor}
                     onChange={(e) => setNewRoomForm(prev => ({ ...prev, floor: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="area">Diện tích (m²) <span className="text-muted-foreground text-xs">(tùy chọn)</span></Label>
+                  <Input
+                    id="area"
+                    type="number"
+                    placeholder="25"
+                    value={newRoomForm.area}
+                    onChange={(e) => setNewRoomForm(prev => ({ ...prev, area: e.target.value }))}
                   />
                 </div>
               </div>
@@ -532,16 +542,6 @@ function RoomsContent() {
                   placeholder="5000000"
                   value={newRoomForm.monthlyRent}
                   onChange={(e) => setNewRoomForm(prev => ({ ...prev, monthlyRent: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="area">Diện tích (m²)</Label>
-                <Input
-                  id="area"
-                  type="number"
-                  placeholder="25"
-                  value={newRoomForm.area}
-                  onChange={(e) => setNewRoomForm(prev => ({ ...prev, area: e.target.value }))}
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -585,11 +585,19 @@ function RoomsContent() {
 
         {/* Status Tabs */}
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as FilterStatus)}>
-          <TabsList>
-            <TabsTrigger value="all">Tất cả ({stats.total})</TabsTrigger>
-            <TabsTrigger value="empty">Phòng trống ({stats.empty})</TabsTrigger>
-            <TabsTrigger value="occupied">Đã cho thuê ({stats.paid})</TabsTrigger>
-            <TabsTrigger value="debt">Đang nợ ({stats.debt})</TabsTrigger>
+          <TabsList className="w-full h-auto flex-wrap sm:flex-nowrap">
+            <TabsTrigger value="all" className="flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1.5">
+              Tất cả ({stats.total})
+            </TabsTrigger>
+            <TabsTrigger value="empty" className="flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1.5">
+              Trống ({stats.empty})
+            </TabsTrigger>
+            <TabsTrigger value="occupied" className="flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1.5">
+              Đã thuê ({stats.paid})
+            </TabsTrigger>
+            <TabsTrigger value="debt" className="flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1.5">
+              Nợ ({stats.debt})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -600,14 +608,11 @@ function RoomsContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Phòng</TableHead>
                 <TableHead>Tòa nhà</TableHead>
+                <TableHead>Mã căn hộ</TableHead>
+                <TableHead>Tên phòng</TableHead>
                 <TableHead>Khách thuê</TableHead>
                 <TableHead className="text-right">Giá thuê</TableHead>
-                <TableHead className="text-center">Điện (kWh)</TableHead>
-                <TableHead className="text-center">Nước (m³)</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Nợ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -619,44 +624,24 @@ function RoomsContent() {
               ) : (
                 paginatedRooms.map((room) => {
                   const building = getBuildingById(room.buildingId);
-                  const lastReading = getLastMeterReading(room);
                   return (
                     <TableRow
                       key={room.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => handleRoomClick(room)}
                     >
-                      <TableCell className="font-medium">P.{room.roomNumber}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {building?.shortName}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {room.roomCode || '—'}
+                      </TableCell>
+                      <TableCell className="font-medium">{room.roomNumber}</TableCell>
                       <TableCell>
-                        {room.tenant?.name || <span className="text-muted-foreground">—</span>}
+                        {room.tenant?.name || <span className="text-muted-foreground">Chưa có khách thuê</span>}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(room.monthlyRent)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {lastReading ? (
-                          <span className="text-sm">
-                            {lastReading.electricityCurr - lastReading.electricityPrev}
-                          </span>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {lastReading ? (
-                          <span className="text-sm">
-                            {lastReading.waterCurr - lastReading.waterPrev}
-                          </span>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(room.status)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {room.debtAmount ? (
-                          <span className="text-red-600 font-medium">{formatCurrency(room.debtAmount)}</span>
-                        ) : '—'}
                       </TableCell>
                     </TableRow>
                   );
@@ -760,7 +745,6 @@ function RoomsContent() {
         ) : (
           paginatedRooms.map((room) => {
             const building = getBuildingById(room.buildingId);
-            const lastReading = getLastMeterReading(room);
             return (
               <Card
                 key={room.id}
@@ -768,45 +752,21 @@ function RoomsContent() {
                 onClick={() => handleRoomClick(room)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">P.{room.roomNumber}</span>
-                        <span className="text-sm text-muted-foreground">{building?.shortName}</span>
+                        <span className="font-semibold">{room.roomNumber}</span>
+                        {room.roomCode && <span className="text-xs text-muted-foreground bg-slate-100 px-1.5 py-0.5 rounded">{room.roomCode}</span>}
                       </div>
-                      <p className="text-sm mt-1">
-                        {room.tenant?.name || <span className="text-muted-foreground">Chưa có khách</span>}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{building?.shortName}</p>
                     </div>
-                    {getStatusBadge(room.status)}
+                    <span className="font-medium text-emerald-600">{formatCurrency(room.monthlyRent)}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Giá thuê</span>
-                      <p className="font-medium">{formatCurrency(room.monthlyRent)}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Zap className="h-3 w-3" /> Điện
-                      </span>
-                      <p className="font-medium">
-                        {lastReading ? `${lastReading.electricityCurr - lastReading.electricityPrev} kWh` : '—'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Droplet className="h-3 w-3" /> Nước
-                      </span>
-                      <p className="font-medium">
-                        {lastReading ? `${lastReading.waterCurr - lastReading.waterPrev} m³` : '—'}
-                      </p>
-                    </div>
+                  <div className="pt-2 border-t">
+                    <p className="text-sm">
+                      {room.tenant?.name || <span className="text-muted-foreground">Chưa có khách thuê</span>}
+                    </p>
                   </div>
-                  {room.debtAmount && (
-                    <div className="mt-2 pt-2 border-t">
-                      <span className="text-red-600 font-medium">Nợ: {formatCurrency(room.debtAmount)}</span>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             );
@@ -848,25 +808,34 @@ function RoomsContent() {
 
       {/* Room Detail Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col">
+        <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col" hideCloseButton>
           {selectedRoom && (
             <>
               {/* Fixed Header */}
-              <div className="px-6 py-5 border-b bg-slate-50/80">
+              <div className="px-4 sm:px-6 py-4 sm:py-5 border-b bg-slate-50/80">
                 <SheetHeader>
-                  <div className="flex items-center justify-between">
-                    <SheetTitle className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center">
-                        <Home className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <span className="text-lg">Phòng {selectedRoom.roomNumber}</span>
-                        <p className="text-sm font-normal text-muted-foreground">
+                  <div className="flex items-center justify-between gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => setSheetOpen(false)}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Đóng
+                    </Button>
+                    <SheetTitle className="flex items-center gap-3 flex-1 min-w-0 justify-end text-right">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 justify-end">
+                          <span className="text-lg">{selectedRoom.roomNumber}</span>
+                          {getStatusBadge(selectedRoom.status)}
+                        </div>
+                        <p className="text-sm font-normal text-muted-foreground truncate">
                           {getBuildingById(selectedRoom.buildingId)?.name}
                         </p>
                       </div>
+                      <Building2 className="h-6 w-6 text-slate-600 shrink-0" />
                     </SheetTitle>
-                    {getStatusBadge(selectedRoom.status)}
                   </div>
                 </SheetHeader>
               </div>
@@ -890,18 +859,18 @@ function RoomsContent() {
                       <span className="hidden sm:inline">Giá dịch vụ</span>
                     </TabsTrigger>
                     <TabsTrigger
-                      value="documents"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
-                    >
-                      <Camera className="h-4 w-4" />
-                      <span className="hidden sm:inline">Hồ sơ</span>
-                    </TabsTrigger>
-                    <TabsTrigger
                       value="meter"
                       className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
                     >
                       <Zap className="h-4 w-4" />
                       <span className="hidden sm:inline">Điện nước</span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="documents"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Camera className="h-4 w-4" />
+                      <span className="hidden sm:inline">Hồ sơ</span>
                     </TabsTrigger>
                   </TabsList>
 
@@ -1247,64 +1216,86 @@ function RoomsContent() {
                 </TabsContent>
 
                 {/* Tab 3: Hồ sơ ảnh */}
-                <TabsContent value="documents" className="mt-4 space-y-4">
-                  {selectedRoom.tenant ? (
-                    <div className="space-y-4">
-                        {/* CCCD Mặt trước */}
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            CCCD - Mặt trước
-                          </Label>
-                          <ImageUploader
-                            label="CCCD - Mặt trước"
-                            aspectRatio={16/10}
-                          />
+                <TabsContent value="documents" className="mt-4 space-y-6">
+                  {/* Hình ảnh phòng trước khi dọn vào - 6 ảnh */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Hình ảnh phòng trước khi dọn vào
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Tối đa 6 ảnh</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Array.from({ length: 6 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-slate-400 hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
+                          <ImageIcon className="h-6 w-6 text-slate-400" />
                         </div>
-
-                        {/* CCCD Mặt sau */}
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            CCCD - Mặt sau
-                          </Label>
-                          <ImageUploader
-                            label="CCCD - Mặt sau"
-                            aspectRatio={16/10}
-                          />
-                        </div>
-
-                        {/* Cà vẹt xe */}
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            Cà vẹt xe
-                          </Label>
-                          <ImageUploader
-                            label="Cà vẹt xe"
-                            aspectRatio={16/10}
-                          />
-                        </div>
-
-                        {/* Hợp đồng */}
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            Hợp đồng thuê phòng
-                          </Label>
-                          <ImageUploader
-                            label="Hợp đồng thuê phòng"
-                            aspectRatio={16/10}
-                          />
-                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">Chưa có khách thuê</p>
-                      <p className="text-sm text-muted-foreground mt-1">Thêm khách thuê để upload hồ sơ ảnh</p>
+                  </div>
+
+                  {/* Hình ảnh các hư hại sẵn có - 2 ảnh */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Hình ảnh các hư hại sẵn có (nếu có)
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Array.from({ length: 2 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-slate-400 hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
+                          <ImageIcon className="h-6 w-6 text-slate-400" />
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Hình ảnh nội thất ban đầu - 4 ảnh */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Hình ảnh nội thất ban đầu
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Array.from({ length: 4 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-slate-400 hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
+                          <ImageIcon className="h-6 w-6 text-slate-400" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hình ảnh khác - 3 ảnh + 1 nút thêm */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Hình ảnh khác
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Array.from({ length: 3 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-slate-400 hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
+                          <ImageIcon className="h-6 w-6 text-slate-400" />
+                        </div>
+                      ))}
+                      {/* Nút thêm ảnh */}
+                      <div
+                        className="aspect-square bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <Plus className="h-8 w-8 text-slate-400" />
+                        <span className="text-xs mt-1">Thêm ảnh</span>
+                      </div>
+                    </div>
+                  </div>
                 </TabsContent>
 
                 {/* Tab 4: Chốt số điện nước */}

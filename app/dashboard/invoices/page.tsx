@@ -59,8 +59,11 @@ import {
   QrCode,
   Copy,
   Loader2,
-  Receipt
+  Receipt,
+  FileStack,
+  X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { mockInvoices, mockRooms, buildings, getBuildingById, getRoomById, defaultPricingTemplate, type Invoice } from '@/lib/data';
 import { toast } from 'sonner';
 
@@ -286,13 +289,21 @@ export default function InvoicesPage() {
             {stats.total} hóa đơn: <span className="text-emerald-600">{stats.paid} đã thu</span>, <span className="text-amber-600">{stats.pending} chờ thu</span>, <span className="text-red-600">{stats.overdue} quá hạn</span>
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Tạo hóa đơn
+        <div className="flex gap-2">
+          <Link href="/dashboard/invoices/bulk">
+            <Button variant="outline">
+              <FileStack className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Khởi tạo hàng loạt</span>
+              <span className="sm:hidden">Hàng loạt</span>
             </Button>
-          </DialogTrigger>
+          </Link>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Tạo hóa đơn
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Tạo hóa đơn mới</DialogTitle>
@@ -391,14 +402,15 @@ export default function InvoicesPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Simple Stats with unified border color */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
           <CardContent className="p-3 sm:p-5">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 bg-blue-50 rounded-lg shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="p-2 bg-blue-50 rounded-lg w-fit">
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
               <div className="min-w-0">
@@ -410,8 +422,8 @@ export default function InvoicesPage() {
         </Card>
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
           <CardContent className="p-3 sm:p-5">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 bg-blue-50 rounded-lg shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="p-2 bg-blue-50 rounded-lg w-fit">
                 <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
               <div className="min-w-0">
@@ -675,18 +687,37 @@ export default function InvoicesPage() {
 
       {/* Invoice Detail Sheet */}
       <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto p-0">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto p-0" hideCloseButton>
           {selectedInvoice && (
             <div className="flex flex-col min-h-full">
               {/* Header Actions */}
-              <div className="sticky top-0 z-10 bg-background border-b p-4 flex items-center justify-between">
-                <SheetTitle className="text-lg">Chi tiết hóa đơn</SheetTitle>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handlePrint}>
+              <div className="sticky top-0 z-10 bg-slate-50/80 border-b px-4 sm:px-6 py-4 sm:py-5">
+                <div className="flex items-center justify-between gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => setDetailSheetOpen(false)}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Đóng
+                  </Button>
+                  <SheetTitle className="flex items-center gap-3 flex-1 min-w-0 justify-end text-right">
+                    <div className="min-w-0">
+                      <span className="text-lg">Phòng {selectedInvoice.roomNumber}</span>
+                      <p className="text-sm font-normal text-muted-foreground truncate">
+                        {getBuildingById(selectedInvoice.buildingId)?.name}
+                      </p>
+                    </div>
+                    <Building2 className="h-6 w-6 text-slate-600 shrink-0" />
+                  </SheetTitle>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={handlePrint}>
                     <Printer className="h-4 w-4 mr-1" />
                     In
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={handleShare}>
                     <Share2 className="h-4 w-4 mr-1" />
                     Chia sẻ
                   </Button>

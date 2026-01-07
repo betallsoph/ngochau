@@ -78,55 +78,47 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats - Simple 4 boxes with unified border color */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <DollarSign className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Doanh thu tháng</p>
-                <p className="text-xl font-bold">{formatCurrency(dashboardStats.totalRevenue)}</p>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Doanh thu tháng</p>
+                <p className="text-base sm:text-xl font-bold truncate">{formatCurrency(dashboardStats.totalRevenue)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Home className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Phòng trống</p>
-                <p className="text-xl font-bold">{dashboardStats.emptyRooms} <span className="text-sm font-normal text-muted-foreground">/ {mockRooms.length}</span></p>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Home className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Phòng trống</p>
+                <p className="text-base sm:text-xl font-bold">{dashboardStats.emptyRooms} <span className="text-xs sm:text-sm font-normal text-muted-foreground">/ {mockRooms.length}</span></p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Receipt className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Chưa thu tiền</p>
-                <p className="text-xl font-bold">{dashboardStats.unpaidInvoices} <span className="text-sm font-normal text-muted-foreground">hóa đơn</span></p>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Receipt className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Chưa thu tiền</p>
+                <p className="text-base sm:text-xl font-bold">{dashboardStats.unpaidInvoices} <span className="text-xs sm:text-sm font-normal text-muted-foreground">hóa đơn</span></p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Sắp hết hạn HĐ</p>
-                <p className="text-xl font-bold">{dashboardStats.expiringContracts} <span className="text-sm font-normal text-muted-foreground">khách</span></p>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Sắp hết hạn HĐ</p>
+                <p className="text-base sm:text-xl font-bold">{dashboardStats.expiringContracts} <span className="text-xs sm:text-sm font-normal text-muted-foreground">khách</span></p>
               </div>
             </div>
           </CardContent>

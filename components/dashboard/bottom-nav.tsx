@@ -101,7 +101,7 @@ export function BottomNav() {
   return (
     <>
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 lg:hidden pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-around h-16 px-2">
           {/* Main nav items */}
           {mainNavItems.map((item) => {
@@ -170,13 +170,13 @@ export function BottomNav() {
               </button>
             </SheetTrigger>
 
-            <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-2xl">
+            <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-2xl px-4 pb-[env(safe-area-inset-bottom)]">
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-left">Menu</SheetTitle>
               </SheetHeader>
 
               {/* Profile section */}
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4 mx-2">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src="/avatar.jpg" alt="Admin" />
                   <AvatarFallback className="bg-slate-800 text-white">
@@ -193,7 +193,7 @@ export function BottomNav() {
                   className="relative shrink-0"
                   onClick={() => {
                     setMoreSheetOpen(false);
-                    toast.info('Tính năng thông báo sẽ sớm được cập nhật');
+                    router.push('/dashboard/notifications');
                   }}
                 >
                   <Bell className="h-5 w-5" />
@@ -209,7 +209,7 @@ export function BottomNav() {
               </div>
 
               {/* Menu items */}
-              <div className="space-y-1">
+              <div className="space-y-1 mx-2">
                 {moreMenuItems.map((item) => {
                   const active = isActive(item.href);
                   return (
@@ -235,7 +235,7 @@ export function BottomNav() {
               </div>
 
               {/* Logout */}
-              <div className="mt-4 pt-4 border-t">
+              <div className="mt-4 pt-4 border-t pb-4 mx-2">
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 p-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
@@ -250,7 +250,7 @@ export function BottomNav() {
       </nav>
 
       {/* Spacer for bottom nav */}
-      <div className="h-16 lg:hidden" />
+      <div className="h-16 lg:hidden pb-[env(safe-area-inset-bottom)]" />
     </>
   );
 }

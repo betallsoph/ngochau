@@ -58,7 +58,8 @@ import {
   Wifi,
   QrCode,
   Copy,
-  Loader2
+  Loader2,
+  Receipt
 } from 'lucide-react';
 import { mockInvoices, mockRooms, buildings, getBuildingById, getRoomById, defaultPricingTemplate, type Invoice } from '@/lib/data';
 import { toast } from 'sonner';
@@ -544,18 +545,20 @@ export default function InvoicesPage() {
                               <Eye className="h-4 w-4 mr-2" />
                               Xem chi tiết
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSendZalo(invoice)}>
-                              <Send className="h-4 w-4 mr-2" />
-                              Gửi Zalo
-                            </DropdownMenuItem>
                             {invoice.status !== 'paid' && (
-                              <DropdownMenuItem
-                                className="text-emerald-600"
-                                onClick={() => handleMarkAsPaid(invoice)}
-                              >
-                                <Check className="h-4 w-4 mr-2" />
-                                Xác nhận đã thu
-                              </DropdownMenuItem>
+                              <>
+                                <DropdownMenuItem onClick={() => handleSendZalo(invoice)}>
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Gửi Zalo nhắc nhở
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-emerald-600"
+                                  onClick={() => handleMarkAsPaid(invoice)}
+                                >
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Xác nhận đã thu
+                                </DropdownMenuItem>
+                              </>
                             )}
                             <DropdownMenuItem onClick={handlePrint}>
                               <Printer className="h-4 w-4 mr-2" />
@@ -571,7 +574,21 @@ export default function InvoicesPage() {
             </TableBody>
           </Table>
           {filteredInvoices.length === 0 && (
-            <p className="p-8 text-center text-muted-foreground">Không tìm thấy hóa đơn nào</p>
+            <div className="p-12 text-center">
+              <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground font-medium mb-2">Không tìm thấy hóa đơn</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {search || statusFilter !== 'all' || buildingFilter !== 'all' || monthFilter !== 'all'
+                  ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                  : 'Tạo hóa đơn mới từ trang Quản lý phòng'}
+              </p>
+              {!search && statusFilter === 'all' && buildingFilter === 'all' && monthFilter === 'all' && (
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tạo hóa đơn đầu tiên
+                </Button>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

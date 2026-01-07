@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Users, UserPlus } from 'lucide-react';
 import { mockRooms, buildings, getBuildingById, type Room } from '@/lib/data';
 
 // Generate tenants from rooms with tenant info
@@ -255,7 +255,21 @@ export default function TenantsPage() {
             </TableBody>
           </Table>
           {filteredTenants.length === 0 && (
-            <p className="p-8 text-center text-muted-foreground">Không tìm thấy khách thuê nào</p>
+            <div className="p-12 text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground font-medium mb-2">Không tìm thấy khách thuê</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {search || buildingFilter !== 'all' || statusFilter !== 'all'
+                  ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                  : 'Bắt đầu bằng việc thêm khách thuê mới'}
+              </p>
+              {!search && buildingFilter === 'all' && statusFilter === 'all' && (
+                <Button onClick={() => setDialogOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Thêm khách thuê đầu tiên
+                </Button>
+              )}
+            </div>
           )}
           {filteredTenants.length > 30 && (
             <p className="p-4 text-center text-sm text-muted-foreground border-t">

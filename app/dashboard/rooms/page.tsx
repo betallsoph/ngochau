@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Suspense, useCallback } from 'react';
+import { useState, useMemo, Suspense, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -49,11 +50,65 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Search, Plus, User, Zap, Droplet, Camera, FileText, Upload, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save, Loader2, LogOut } from 'lucide-react';
+import { Search, Plus, User, Zap, Droplet, FileText, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save, Loader2, LogOut, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ImageIcon, Camera } from 'lucide-react';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus } from '@/lib/data';
 import { toast } from 'sonner';
 
 type FilterStatus = 'all' | 'empty' | 'occupied' | 'debt';
+
+// Pagination config
+const ITEMS_PER_PAGE = 20;
+
+// Skeleton component for table rows
+function TableRowSkeleton() {
+  return (
+    <TableRow>
+      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+    </TableRow>
+  );
+}
+
+// Skeleton component for mobile cards
+function CardSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-5 w-20" />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-4 w-14" />
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-4 w-14" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Form state types
 interface NewRoomForm {
@@ -90,6 +145,10 @@ function RoomsContent() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Loading states
   const [isAddingRoom, setIsAddingRoom] = useState(false);
@@ -131,6 +190,18 @@ function RoomsContent() {
     parkingFee: defaultPricingTemplate.parkingFee,
   });
 
+  // Simulate loading on filter change
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, [search, statusFilter, buildingFilter, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, buildingFilter]);
+
   // Filtered rooms with search and status filter
   const filteredRooms = useMemo(() => {
     return mockRooms.filter(room => {
@@ -146,6 +217,24 @@ function RoomsContent() {
       return matchSearch && matchStatus && matchBuilding;
     });
   }, [search, statusFilter, buildingFilter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToPrevPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
 
   // Stats
   const stats = useMemo(() => {
@@ -374,13 +463,6 @@ function RoomsContent() {
     setIsCreatingInvoice(false);
   };
 
-  const handleUploadImage = (type: string) => {
-    toast.info('Đang mở trình chọn file...', {
-      description: `Upload ${type}`,
-    });
-    // In real app, this would open file picker
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -529,115 +611,238 @@ function RoomsContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRooms.map((room) => {
-                const building = getBuildingById(room.buildingId);
-                const lastReading = getLastMeterReading(room);
-                return (
-                  <TableRow
-                    key={room.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleRoomClick(room)}
-                  >
-                    <TableCell className="font-medium">P.{room.roomNumber}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {building?.shortName}
-                    </TableCell>
-                    <TableCell>
-                      {room.tenant?.name || <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(room.monthlyRent)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {lastReading ? (
-                        <span className="text-sm">
-                          {lastReading.electricityCurr - lastReading.electricityPrev}
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {lastReading ? (
-                        <span className="text-sm">
-                          {lastReading.waterCurr - lastReading.waterPrev}
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(room.status)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {room.debtAmount ? (
-                        <span className="text-red-600 font-medium">{formatCurrency(room.debtAmount)}</span>
-                      ) : '—'}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {isLoading ? (
+                // Skeleton loading state
+                Array.from({ length: 10 }).map((_, i) => (
+                  <TableRowSkeleton key={i} />
+                ))
+              ) : (
+                paginatedRooms.map((room) => {
+                  const building = getBuildingById(room.buildingId);
+                  const lastReading = getLastMeterReading(room);
+                  return (
+                    <TableRow
+                      key={room.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleRoomClick(room)}
+                    >
+                      <TableCell className="font-medium">P.{room.roomNumber}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {building?.shortName}
+                      </TableCell>
+                      <TableCell>
+                        {room.tenant?.name || <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(room.monthlyRent)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {lastReading ? (
+                          <span className="text-sm">
+                            {lastReading.electricityCurr - lastReading.electricityPrev}
+                          </span>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {lastReading ? (
+                          <span className="text-sm">
+                            {lastReading.waterCurr - lastReading.waterPrev}
+                          </span>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(room.status)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {room.debtAmount ? (
+                          <span className="text-red-600 font-medium">{formatCurrency(room.debtAmount)}</span>
+                        ) : '—'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
-          {filteredRooms.length === 0 && (
-            <p className="p-8 text-center text-muted-foreground">Không tìm thấy phòng nào</p>
+          {!isLoading && filteredRooms.length === 0 && (
+            <div className="p-12 text-center">
+              <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-2">Không tìm thấy phòng nào</p>
+              <p className="text-sm text-muted-foreground">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+            </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Pagination */}
+      {!isLoading && filteredRooms.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+          <p className="text-sm text-muted-foreground">
+            Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredRooms.length)} trong tổng số {filteredRooms.length} phòng
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToFirstPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => goToPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToLastPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
-        {filteredRooms.map((room) => {
-          const building = getBuildingById(room.buildingId);
-          const lastReading = getLastMeterReading(room);
-          return (
-            <Card
-              key={room.id}
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => handleRoomClick(room)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">P.{room.roomNumber}</span>
-                      <span className="text-sm text-muted-foreground">{building?.shortName}</span>
+        {isLoading ? (
+          // Skeleton loading state for mobile
+          Array.from({ length: 5 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))
+        ) : (
+          paginatedRooms.map((room) => {
+            const building = getBuildingById(room.buildingId);
+            const lastReading = getLastMeterReading(room);
+            return (
+              <Card
+                key={room.id}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleRoomClick(room)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">P.{room.roomNumber}</span>
+                        <span className="text-sm text-muted-foreground">{building?.shortName}</span>
+                      </div>
+                      <p className="text-sm mt-1">
+                        {room.tenant?.name || <span className="text-muted-foreground">Chưa có khách</span>}
+                      </p>
                     </div>
-                    <p className="text-sm mt-1">
-                      {room.tenant?.name || <span className="text-muted-foreground">Chưa có khách</span>}
-                    </p>
+                    {getStatusBadge(room.status)}
                   </div>
-                  {getStatusBadge(room.status)}
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Giá thuê</span>
-                    <p className="font-medium">{formatCurrency(room.monthlyRent)}</p>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Giá thuê</span>
+                      <p className="font-medium">{formatCurrency(room.monthlyRent)}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Zap className="h-3 w-3" /> Điện
+                      </span>
+                      <p className="font-medium">
+                        {lastReading ? `${lastReading.electricityCurr - lastReading.electricityPrev} kWh` : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Droplet className="h-3 w-3" /> Nước
+                      </span>
+                      <p className="font-medium">
+                        {lastReading ? `${lastReading.waterCurr - lastReading.waterPrev} m³` : '—'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Zap className="h-3 w-3" /> Điện
-                    </span>
-                    <p className="font-medium">
-                      {lastReading ? `${lastReading.electricityCurr - lastReading.electricityPrev} kWh` : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Droplet className="h-3 w-3" /> Nước
-                    </span>
-                    <p className="font-medium">
-                      {lastReading ? `${lastReading.waterCurr - lastReading.waterPrev} m³` : '—'}
-                    </p>
-                  </div>
-                </div>
-                {room.debtAmount && (
-                  <div className="mt-2 pt-2 border-t">
-                    <span className="text-red-600 font-medium">Nợ: {formatCurrency(room.debtAmount)}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-        {filteredRooms.length === 0 && (
-          <p className="p-8 text-center text-muted-foreground">Không tìm thấy phòng nào</p>
+                  {room.debtAmount && (
+                    <div className="mt-2 pt-2 border-t">
+                      <span className="text-red-600 font-medium">Nợ: {formatCurrency(room.debtAmount)}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+        {!isLoading && filteredRooms.length === 0 && (
+          <div className="p-12 text-center">
+            <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-2">Không tìm thấy phòng nào</p>
+            <p className="text-sm text-muted-foreground">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+          </div>
+        )}
+
+        {/* Mobile Pagination */}
+        {!isLoading && filteredRooms.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Trang {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -1051,22 +1256,10 @@ function RoomsContent() {
                             <FileText className="h-4 w-4" />
                             CCCD - Mặt trước
                           </Label>
-                          <Card className="overflow-hidden">
-                            <AspectRatio ratio={16/10}>
-                              <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
-                                <Camera className="h-8 w-8 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUploadImage('CCCD mặt trước')}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Upload ảnh
-                                </Button>
-                              </div>
-                            </AspectRatio>
-                          </Card>
+                          <ImageUploader
+                            label="CCCD - Mặt trước"
+                            aspectRatio={16/10}
+                          />
                         </div>
 
                         {/* CCCD Mặt sau */}
@@ -1075,22 +1268,10 @@ function RoomsContent() {
                             <FileText className="h-4 w-4" />
                             CCCD - Mặt sau
                           </Label>
-                          <Card className="overflow-hidden">
-                            <AspectRatio ratio={16/10}>
-                              <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
-                                <Camera className="h-8 w-8 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUploadImage('CCCD mặt sau')}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Upload ảnh
-                                </Button>
-                              </div>
-                            </AspectRatio>
-                          </Card>
+                          <ImageUploader
+                            label="CCCD - Mặt sau"
+                            aspectRatio={16/10}
+                          />
                         </div>
 
                         {/* Cà vẹt xe */}
@@ -1099,22 +1280,10 @@ function RoomsContent() {
                             <FileText className="h-4 w-4" />
                             Cà vẹt xe
                           </Label>
-                          <Card className="overflow-hidden">
-                            <AspectRatio ratio={16/10}>
-                              <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
-                                <Camera className="h-8 w-8 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUploadImage('Cà vẹt xe')}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Upload ảnh
-                                </Button>
-                              </div>
-                            </AspectRatio>
-                          </Card>
+                          <ImageUploader
+                            label="Cà vẹt xe"
+                            aspectRatio={16/10}
+                          />
                         </div>
 
                         {/* Hợp đồng */}
@@ -1123,28 +1292,17 @@ function RoomsContent() {
                             <FileText className="h-4 w-4" />
                             Hợp đồng thuê phòng
                           </Label>
-                          <Card className="overflow-hidden">
-                            <AspectRatio ratio={16/10}>
-                              <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-2">
-                                <Camera className="h-8 w-8 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">Chưa có ảnh</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUploadImage('Hợp đồng')}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Upload ảnh
-                                </Button>
-                              </div>
-                            </AspectRatio>
-                          </Card>
+                          <ImageUploader
+                            label="Hợp đồng thuê phòng"
+                            aspectRatio={16/10}
+                          />
                         </div>
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-muted-foreground">Chưa có khách thuê</p>
+                      <p className="text-sm text-muted-foreground mt-1">Thêm khách thuê để upload hồ sơ ảnh</p>
                     </div>
                   )}
                 </TabsContent>

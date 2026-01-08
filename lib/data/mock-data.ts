@@ -6,6 +6,7 @@ import type {
   Invoice,
   MeterReading,
   RoomStatus,
+  RoomType,
   DashboardStats,
   BuildingStats,
   RoomPricing
@@ -200,10 +201,22 @@ export const generateRooms = (): Room[] => {
       const baseArea = building.id === 'ssr' || building.id === 'sunrise' ? 65 : 50;
       const area = baseArea + Math.floor(Math.random() * 20);
 
+      // Random room type: 60% standard, 25% master, 15% balcony
+      const typeRandom = Math.random();
+      let roomType: RoomType;
+      if (typeRandom < 0.60) {
+        roomType = 'standard';
+      } else if (typeRandom < 0.85) {
+        roomType = 'master';
+      } else {
+        roomType = 'balcony';
+      }
+
       rooms.push({
         id: globalId++,
         buildingId: building.id,
         roomNumber,
+        roomType,
         floor,
         status,
         monthlyRent,

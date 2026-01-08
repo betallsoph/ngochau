@@ -2,6 +2,7 @@
 
 export type RoomStatus = 'empty' | 'paid' | 'debt';
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue';
+export type RoomType = 'standard' | 'master' | 'balcony'; // thường, master, ban công
 
 export interface Building {
   id: string;
@@ -52,6 +53,7 @@ export interface Room {
   buildingId: string;
   roomNumber: string;
   roomCode?: string; // Mã căn hộ
+  roomType: RoomType; // Loại phòng
   floor?: number;
   status: RoomStatus;
   monthlyRent: number;

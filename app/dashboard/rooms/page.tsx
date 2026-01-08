@@ -52,7 +52,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Search, Plus, User, Zap, Droplet, FileText, Calculator, Phone, Calendar, CreditCard, Home, DollarSign, Wifi, Trash2, Car, Save, Loader2, LogOut, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ImageIcon, Camera, X, Building2 } from 'lucide-react';
 import { ImageUploader } from '@/components/ui/image-uploader';
-import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus } from '@/lib/data';
+import { mockRooms, buildings, getBuildingById, defaultPricingTemplate, type Room, type RoomStatus, type RoomType } from '@/lib/data';
 import { toast } from 'sonner';
 
 type FilterStatus = 'all' | 'empty' | 'occupied' | 'debt';
@@ -66,6 +66,7 @@ function TableRowSkeleton() {
     <TableRow>
       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
       <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
       <TableCell><Skeleton className="h-4 w-20" /></TableCell>
       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
       <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
@@ -96,11 +97,19 @@ function CardSkeleton() {
   );
 }
 
+// Room type labels
+const roomTypeLabels: Record<RoomType, string> = {
+  standard: 'Phòng thường',
+  master: 'Phòng master',
+  balcony: 'Phòng ban công',
+};
+
 // Form state types
 interface NewRoomForm {
   building: string;
   roomNumber: string;
   roomCode: string;
+  roomType: RoomType;
   floor: string;
   monthlyRent: string;
   area: string;
@@ -149,6 +158,7 @@ function RoomsContent() {
     building: '',
     roomNumber: '',
     roomCode: '',
+    roomType: 'standard',
     floor: '',
     monthlyRent: '',
     area: '',
@@ -362,6 +372,7 @@ function RoomsContent() {
       building: '',
       roomNumber: '',
       roomCode: '',
+      roomType: 'standard',
       floor: '',
       monthlyRent: '',
       area: '',
@@ -512,6 +523,22 @@ function RoomsContent() {
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="roomType">Loại phòng</Label>
+                <Select
+                  value={newRoomForm.roomType}
+                  onValueChange={(v) => setNewRoomForm(prev => ({ ...prev, roomType: v as RoomType }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại phòng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Phòng thường</SelectItem>
+                    <SelectItem value="master">Phòng master</SelectItem>
+                    <SelectItem value="balcony">Phòng ban công</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="floor">Tầng <span className="text-muted-foreground text-xs">(tùy chọn)</span></Label>
@@ -611,6 +638,7 @@ function RoomsContent() {
                 <TableHead>Tòa nhà</TableHead>
                 <TableHead>Mã căn hộ</TableHead>
                 <TableHead>Tên phòng</TableHead>
+                <TableHead>Loại phòng</TableHead>
                 <TableHead>Khách thuê</TableHead>
                 <TableHead className="text-right">Giá thuê</TableHead>
               </TableRow>
@@ -637,6 +665,9 @@ function RoomsContent() {
                         {room.roomCode || '—'}
                       </TableCell>
                       <TableCell className="font-medium">{room.roomNumber}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {roomTypeLabels[room.roomType]}
+                      </TableCell>
                       <TableCell>
                         {room.tenant?.name || <span className="text-muted-foreground">Chưa có khách thuê</span>}
                       </TableCell>
@@ -758,7 +789,7 @@ function RoomsContent() {
                         <span className="font-semibold">{room.roomNumber}</span>
                         {room.roomCode && <span className="text-xs text-muted-foreground bg-slate-100 px-1.5 py-0.5 rounded">{room.roomCode}</span>}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{building?.shortName}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{building?.shortName} • {roomTypeLabels[room.roomType]}</p>
                     </div>
                     <span className="font-medium text-emerald-600">{formatCurrency(room.monthlyRent)}</span>
                   </div>

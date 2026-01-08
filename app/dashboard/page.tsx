@@ -77,8 +77,10 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">{today && `Hôm nay, ${today}`}</p>
       </div>
 
-      {/* Stats - Simple 4 boxes with unified border color */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Overview Stats */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Tình trạng</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors">
           <CardContent className="p-3 sm:p-5">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -123,12 +125,13 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Buildings summary - Simple table style */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Các tòa nhà</h2>
+          <h2 className="text-lg font-semibold">Doanh thu theo tòa nhà</h2>
           <Link href="/dashboard/buildings">
             <Button variant="outline" size="sm">Xem chi tiết</Button>
           </Link>
@@ -139,10 +142,7 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tòa nhà</TableHead>
-                  <TableHead className="text-center">Tổng phòng</TableHead>
-                  <TableHead className="text-center">Đang thuê</TableHead>
-                  <TableHead className="text-center">Còn nợ</TableHead>
-                  <TableHead className="text-center">Trống</TableHead>
+                  <TableHead className="text-right">Doanh thu tháng</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -155,10 +155,9 @@ export default function DashboardPage() {
                           {building.name}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-center">{stats.total}</TableCell>
-                      <TableCell className="text-center">{stats.paid}</TableCell>
-                      <TableCell className="text-center font-medium text-red-600">{stats.debt > 0 ? stats.debt : '-'}</TableCell>
-                      <TableCell className="text-center">{stats.empty > 0 ? stats.empty : '-'}</TableCell>
+                      <TableCell className="text-right font-medium text-emerald-600">
+                        {formatCurrency(stats.revenue)}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

@@ -116,6 +116,16 @@ export const buildings: Building[] = [
     floors: 5,
     electricityRate: 3800,
     waterRate: 18000
+  },
+  {
+    id: 'mp6',
+    name: 'Mizuki Park 6',
+    shortName: 'MP6',
+    address: 'Nguyễn Văn Linh, Bình Chánh, TP.HCM',
+    totalRooms: 8,
+    floors: 3,
+    electricityRate: 3500,
+    waterRate: 15000
   }
 ];
 
@@ -173,7 +183,17 @@ export const generateRooms = (): Room[] => {
     for (let i = 1; i <= building.totalRooms; i++) {
       const floor = Math.ceil(i / roomsPerFloor);
       const roomOnFloor = ((i - 1) % roomsPerFloor) + 1;
-      const roomNumber = `${floor}${roomOnFloor.toString().padStart(2, '0')}`;
+
+      // Special room code format for MP6: MP-tầng-phòng
+      let roomNumber: string;
+      let roomCode: string | undefined;
+
+      if (building.id === 'mp6') {
+        roomNumber = `${floor}${roomOnFloor.toString().padStart(2, '0')}`;
+        roomCode = `MP-${floor}-${roomOnFloor.toString().padStart(2, '0')}`;
+      } else {
+        roomNumber = `${floor}${roomOnFloor.toString().padStart(2, '0')}`;
+      }
 
       // Random status distribution: 12% empty, 63% paid, 25% debt
       const random = Math.random();
@@ -216,6 +236,7 @@ export const generateRooms = (): Room[] => {
         id: globalId++,
         buildingId: building.id,
         roomNumber,
+        roomCode,
         roomType,
         floor,
         status,

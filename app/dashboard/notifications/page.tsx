@@ -13,6 +13,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Bell,
   AlertTriangle,
   Clock,
@@ -228,6 +238,9 @@ export default function NotificationsPage() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | NotificationPriority>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | NotificationType>('all');
   const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter(n => {
@@ -282,6 +295,7 @@ export default function NotificationsPage() {
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, isRead: true } : n)
     );
+    toast.success('Đã đánh dấu là đã đọc');
   };
 
   const handleMarkAllAsRead = () => {
@@ -291,15 +305,29 @@ export default function NotificationsPage() {
     toast.success('Đã đánh dấu tất cả là đã đọc');
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    toast.success('Đã xóa thông báo');
+    setNotificationToDelete(id);
+    setDeleteDialogOpen(true);
   };
 
-  const handleDeleteAllRead = () => {
+  const handleConfirmDelete = () => {
+    if (notificationToDelete) {
+      setNotifications(prev => prev.filter(n => n.id !== notificationToDelete));
+      toast.success('Đã xóa thông báo');
+      setNotificationToDelete(null);
+    }
+    setDeleteDialogOpen(false);
+  };
+
+  const handleDeleteAllReadClick = () => {
+    setDeleteAllDialogOpen(true);
+  };
+
+  const handleConfirmDeleteAllRead = () => {
     setNotifications(prev => prev.filter(n => !n.isRead));
     toast.success('Đã xóa tất cả thông báo đã đọc');
+    setDeleteAllDialogOpen(false);
   };
 
   return (
@@ -329,7 +357,7 @@ export default function NotificationsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDeleteAllRead}
+            onClick={handleDeleteAllReadClick}
             disabled={notifications.filter(n => n.isRead).length === 0}
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -558,7 +586,7 @@ export default function NotificationsPage() {
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={(e) => handleDelete(notification.id, e)}
+                          onClick={(e) => handleDeleteClick(notification.id, e)}
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
                           Xóa
@@ -581,6 +609,48 @@ export default function NotificationsPage() {
           </p>
         </div>
       )}
+
+      {/* Delete Single Notification Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa thông báo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa thông báo này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Read Notifications Dialog */}
+      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa tất cả thông báo đã đọc?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa tất cả thông báo đã đọc? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteAllRead}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa tất cả
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

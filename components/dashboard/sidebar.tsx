@@ -30,7 +30,8 @@ import {
   Shield,
   HelpCircle,
   Check,
-  Clock
+  Clock,
+  MessageSquare
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -277,7 +278,10 @@ export function Sidebar({ className }: SidebarProps) {
                   )}
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="justify-center text-blue-600">
+                <DropdownMenuItem
+                  className="justify-center text-blue-600"
+                  onClick={() => router.push('/dashboard/notifications')}
+                >
                   Xem tất cả thông báo
                 </DropdownMenuItem>
               </DropdownMenuContent>

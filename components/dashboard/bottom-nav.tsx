@@ -25,6 +25,7 @@ import {
   Bell,
   LogOut,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 

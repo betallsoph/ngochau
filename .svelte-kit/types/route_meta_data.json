@@ -1,0 +1,57 @@
+{
+	"/": [],
+	"/api/announcements": [
+		"src/routes/api/announcements/+server.ts"
+	],
+	"/api/auth": [
+		"src/routes/api/auth/+server.ts"
+	],
+	"/api/dashboard/stats": [
+		"src/routes/api/dashboard/stats/+server.ts"
+	],
+	"/api/invoices": [
+		"src/routes/api/invoices/+server.ts"
+	],
+	"/api/invoices/bulk": [
+		"src/routes/api/invoices/bulk/+server.ts"
+	],
+	"/api/invoices/[id]": [
+		"src/routes/api/invoices/[id]/+server.ts"
+	],
+	"/api/notifications": [
+		"src/routes/api/notifications/+server.ts"
+	],
+	"/api/properties": [
+		"src/routes/api/properties/+server.ts"
+	],
+	"/api/requests": [
+		"src/routes/api/requests/+server.ts"
+	],
+	"/api/rooms": [
+		"src/routes/api/rooms/+server.ts"
+	],
+	"/api/services": [
+		"src/routes/api/services/+server.ts"
+	],
+	"/api/settings": [
+		"src/routes/api/settings/+server.ts"
+	],
+	"/api/super-admin": [
+		"src/routes/api/super-admin/+server.ts"
+	],
+	"/api/tenants": [
+		"src/routes/api/tenants/+server.ts"
+	],
+	"/dashboard": [],
+	"/dashboard/buildings": [],
+	"/dashboard/invoices": [],
+	"/dashboard/invoices/bulk": [],
+	"/dashboard/notifications": [],
+	"/dashboard/requests": [],
+	"/dashboard/rooms": [],
+	"/dashboard/settings": [],
+	"/dashboard/tenants": [],
+	"/login": [],
+	"/super-admin": [],
+	"/tenant": []
+}

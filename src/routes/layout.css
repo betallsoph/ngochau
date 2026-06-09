@@ -1,0 +1,108 @@
+@font-face {
+  font-family: 'Google Sans';
+  src: url('/fonts/GoogleSansOTF/GoogleSans-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Google Sans';
+  src: url('/fonts/GoogleSansOTF/GoogleSans-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Google Sans';
+  src: url('/fonts/GoogleSansOTF/GoogleSans-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Google Sans", system-ui, sans-serif;
+  --font-mono: "Google Sans", system-ui, sans-serif;
+
+  /* Neobrutalism Shadows (Very Thin) */
+  --shadow-primary: 2px 2px 0px 0px #000000;
+  --shadow-secondary: 1px 1px 0px 0px #000000;
+  --shadow-secondary-opposite: -1px 1px 0px 0px #000000;
+
+  /* Neobrutalism Colors */
+  --color-primary-blue: rgb(147, 197, 253);
+  --color-primary-dark: rgb(96, 165, 250);
+  --color-primary-light: rgb(219, 234, 254);
+  --color-primary-lighter: rgb(239, 246, 255);
+  --color-primary-medium: rgb(191, 219, 254);
+}
+
+@layer base {
+  body {
+    @apply bg-white text-black antialiased;
+    font-family: "Google Sans", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  /* Safe area support for notched phones */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  a {
+    @apply text-blue-500 hover:text-blue-600 transition-colors duration-200;
+  }
+
+  /* Better mobile tap targets */
+  button, a {
+    touch-action: manipulation;
+  }
+
+  /* Prevent text size adjust on iOS */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #93C5FD;
+  border: 2px solid black;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #60A5FA;
+}
+
+/* Selection Color */
+::selection {
+  background: rgb(147, 197, 253);
+  color: black;
+}

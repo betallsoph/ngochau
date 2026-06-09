@@ -1,0 +1,1 @@
+import{c as e,s as t}from"./Bj-fpdES.js";import"./xihTtKlq.js";import{t as n}from"./DD_xfyip.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=t(a,r),s=[[`circle`,{cx:`12`,cy:`12`,r:`10`}],[`line`,{x1:`12`,x2:`12`,y1:`8`,y2:`12`}],[`line`,{x1:`12`,x2:`12.01`,y1:`16`,y2:`16`}]];n(i,e({name:`circle-alert`},()=>o,{get iconNode(){return s}}))}export{i as t};

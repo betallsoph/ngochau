@@ -14,7 +14,7 @@ function _page($$renderer, $$props) {
 				return true;
 			});
 		});
-		$$renderer.push(`<div class="space-y-6"><div><h1 class="text-2xl font-black text-black">Báo Cáo Sự Cố</h1> <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý và giải quyết các yêu cầu sửa chữa từ khách thuê phòng</p></div> <div class="bg-blue-100 border-2 border-black p-4 rounded-lg shadow-secondary flex flex-wrap gap-4 items-center"><div class="space-y-1"><span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span> `);
+		$$renderer.push(`<div class="space-y-6"><div><h1 class="text-2xl font-black text-black">Báo Cáo Sự Cố</h1> <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý và giải quyết các yêu cầu sửa chữa từ khách thuê phòng</p></div> <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-wrap gap-4 items-center"><div class="space-y-1"><span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span> `);
 		$$renderer.select({
 			value: statusFilter,
 			class: "border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"

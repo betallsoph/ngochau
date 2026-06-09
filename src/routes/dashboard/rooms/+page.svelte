@@ -424,7 +424,7 @@
   </div>
 
   <!-- Filter bar -->
-  <div class="bg-blue-100 border-2 border-black p-4 rounded-lg shadow-secondary flex flex-col md:flex-row gap-4 items-center justify-between">
+  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-col md:flex-row gap-4 items-center justify-between">
     <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
       <div class="space-y-1">
         <span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Chọn tòa nhà</span>
@@ -476,7 +476,7 @@
       <Loader2 class="h-10 w-10 text-black animate-spin" />
     </div>
   {:else if rooms.length === 0}
-    <div class="bg-blue-100 border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
+    <div class="bg-white border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
       <Home class="h-12 w-12 text-black mx-auto mb-3" />
       <h3 class="font-black text-black text-lg">Tòa nhà này chưa có phòng</h3>
       <p class="text-zinc-600 text-sm mt-2 font-semibold">Bắt đầu bằng cách tạo các phòng trọ để thêm thông tin khách thuê.</p>
@@ -520,13 +520,13 @@
     >
       <!-- Dialog Content: Brutallist Panel with macOS Header -->
       <div 
-        class="bg-blue-100 rounded-lg w-full max-w-lg border-2 border-black shadow-primary overflow-hidden relative flex flex-col animate-[scale-up_0.2s_ease-out]"
+        class="bg-white rounded-lg w-full max-w-lg border-2 border-black shadow-primary overflow-hidden relative flex flex-col animate-[scale-up_0.2s_ease-out]"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- macOS Style Header -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>
@@ -662,13 +662,13 @@
     >
       <!-- Drawer Content: Brutallist Panel border-l-2 -->
       <div 
-        class="bg-blue-100 w-full max-w-xl h-full border-l-2 border-black shadow-primary flex flex-col justify-between animate-[slide-left_0.2s_ease-out] overflow-hidden"
+        class="bg-white w-full max-w-xl h-full border-l-2 border-black shadow-primary flex flex-col justify-between animate-[slide-left_0.2s_ease-out] overflow-hidden"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- macOS Style Header -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>

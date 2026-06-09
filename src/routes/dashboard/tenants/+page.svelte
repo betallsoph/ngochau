@@ -221,26 +221,18 @@
   </div>
 
   <!-- Quick stats -->
-  <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-    <div class="bg-blue-100 border-2 border-black p-3 sm:p-5 rounded-lg shadow-secondary flex items-center gap-3 sm:gap-4 text-black">
-      <div class="p-2 sm:p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-        <Users class="h-4 w-4 sm:h-6 sm:w-6" />
-      </div>
-      <div class="min-w-0">
-        <p class="text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Khách thuê</p>
-        <h3 class="text-sm sm:text-2xl font-black text-black mt-0.5 sm:mt-1">{tenants.length} người</h3>
-      </div>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+      <Users class="h-5 w-5 text-blue-500 mb-2" />
+      <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Khách thuê</p>
+      <h3 class="text-base sm:text-xl font-black text-black mt-0.5">{tenants.length} người</h3>
     </div>
-    <div class="bg-blue-100 border-2 border-black p-3 sm:p-5 rounded-lg shadow-secondary flex items-center gap-3 sm:gap-4 text-black">
-      <div class="p-2 sm:p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-        <DollarSign class="h-4 w-4 sm:h-6 sm:w-6" />
-      </div>
-      <div class="min-w-0">
-        <p class="text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Tiền cọ</p>
-        <h3 class="text-sm sm:text-2xl font-black text-black mt-0.5 sm:mt-1 truncate">
-          {formatCurrency(tenants.reduce((sum, t) => sum + t.deposit, 0))}
-        </h3>
-      </div>
+    <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+      <DollarSign class="h-5 w-5 text-blue-500 mb-2" />
+      <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Tiền cọc giữ</p>
+      <h3 class="text-base sm:text-xl font-black text-black mt-0.5 truncate">
+        {formatCurrency(tenants.reduce((sum, t) => sum + t.deposit, 0))}
+      </h3>
     </div>
   </div>
 
@@ -250,16 +242,14 @@
       <Loader2 class="h-10 w-10 text-black animate-spin" />
     </div>
   {:else if tenants.length === 0}
-    <div class="bg-blue-100 border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
-      <div class="bg-white border-2 border-black w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-secondary text-black">
-        <Users class="h-7 w-7" />
-      </div>
+    <div class="bg-white border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
+              <Users class="h-7 w-7" />
       <h3 class="font-black text-black text-lg">Chưa có khách thuê nào</h3>
       <p class="text-zinc-600 text-sm mt-2 font-semibold">Đăng ký khách thuê trực tiếp vào phòng trọ để bắt đầu quản lý hợp đồng.</p>
     </div>
   {:else}
     <!-- Tenants List -->
-    <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden">
+    <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden">
       <!-- Mobile card list -->
       <div class="sm:hidden divide-y-2 divide-black bg-white">
         {#each tenants as tenant}
@@ -353,13 +343,13 @@
     >
       <!-- Dialog Content: Brutallist macOS Window style -->
       <div 
-        class="bg-blue-100 rounded-lg w-full max-w-xl border-2 border-black shadow-primary overflow-hidden relative flex flex-col max-h-[90vh] animate-[scale-up_0.2s_ease-out]"
+        class="bg-white rounded-lg w-full max-w-xl border-2 border-black shadow-primary overflow-hidden relative flex flex-col max-h-[90vh] animate-[scale-up_0.2s_ease-out]"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- Windows Header style -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>
@@ -571,13 +561,13 @@
     >
       <!-- Drawer Content: Brutallist Panel border-l-2 -->
       <div 
-        class="bg-blue-100 w-full max-w-md h-full border-l-2 border-black shadow-primary flex flex-col justify-between animate-[slide-left_0.2s_ease-out] overflow-hidden"
+        class="bg-white w-full max-w-md h-full border-l-2 border-black shadow-primary flex flex-col justify-between animate-[slide-left_0.2s_ease-out] overflow-hidden"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- Windows Header style -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>

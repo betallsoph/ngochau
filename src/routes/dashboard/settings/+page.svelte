@@ -121,7 +121,7 @@
     <form onsubmit={handleSaveSettings} class="space-y-6">
       
       <!-- Section 1: User Profile -->
-      <div class="bg-blue-100 border-2 border-black p-6 rounded-lg shadow-secondary space-y-4 text-black">
+      <div class="bg-white border-2 border-black p-6 rounded-lg shadow-secondary space-y-4 text-black">
         <h2 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2 select-none">
           1. Thông tin cá nhân (Chỉ xem) <User class="h-5 w-5" />
         </h2>
@@ -158,7 +158,7 @@
       </div>
 
       <!-- Section 2: Brand & Bank QR Settings -->
-      <div class="bg-blue-100 border-2 border-black p-6 rounded-lg shadow-secondary space-y-4 text-black">
+      <div class="bg-white border-2 border-black p-6 rounded-lg shadow-secondary space-y-4 text-black">
         <h2 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2 select-none">
           2. Thương hiệu & VietQR nhận tiền chuyển khoản <Landmark class="h-5 w-5" />
         </h2>

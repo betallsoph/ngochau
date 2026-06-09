@@ -184,62 +184,46 @@
     </div>
   {:else}
     <!-- Stats Cards Grid: 2 cols mobile, 4 cols desktop -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <!-- Card 1: Revenue -->
-      <div class="bg-blue-100 border-2 border-black p-3 sm:p-5 rounded-lg shadow-secondary flex items-center gap-3 sm:gap-4 text-black">
-        <div class="p-2 sm:p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-          <DollarSign class="h-4 w-4 sm:h-6 sm:w-6" />
-        </div>
-        <div class="min-w-0">
-          <p class="text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate">Doanh thu</p>
-          <h3 class="text-sm sm:text-2xl font-black text-black mt-0.5 sm:mt-1 truncate">{formatCurrency(stats.totalRevenue)}</h3>
-        </div>
+      <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+        <DollarSign class="h-5 w-5 text-blue-500 mb-2" />
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Doanh thu</p>
+        <h3 class="text-base sm:text-xl font-black text-black mt-0.5 truncate">{formatCurrency(stats.totalRevenue)}</h3>
       </div>
 
       <!-- Card 2: Occupancy -->
-      <div class="bg-blue-100 border-2 border-black p-3 sm:p-5 rounded-lg shadow-secondary flex items-center gap-3 sm:gap-4 text-black">
-        <div class="p-2 sm:p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-          <Home class="h-4 w-4 sm:h-6 sm:w-6" />
-        </div>
-        <div class="min-w-0">
-          <p class="text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Tỷ lệ trống</p>
-          <h3 class="text-sm sm:text-xl font-black text-black mt-0.5 sm:mt-1">
-            {stats.emptyRooms}/{stats.totalRooms}
-            <span class="text-[10px] sm:text-xs font-bold text-zinc-500 block">
-              Lấp đầy {stats.totalRooms > 0 ? Math.round((stats.occupiedRooms / stats.totalRooms) * 100) : 0}%
-            </span>
-          </h3>
-        </div>
+      <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+        <Home class="h-5 w-5 text-blue-500 mb-2" />
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Tỷ lệ trống</p>
+        <h3 class="text-base sm:text-xl font-black text-black mt-0.5">
+          {stats.emptyRooms}/{stats.totalRooms}
+          <span class="text-[10px] font-bold text-zinc-400 block">
+            Lấp đầy {stats.totalRooms > 0 ? Math.round((stats.occupiedRooms / stats.totalRooms) * 100) : 0}%
+          </span>
+        </h3>
       </div>
 
       <!-- Card 3: Unpaid Bills -->
-      <div class="bg-blue-100 border-2 border-black p-3 sm:p-5 rounded-lg shadow-secondary flex items-center gap-3 sm:gap-4 text-black">
-        <div class="p-2 sm:p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-          <Receipt class="h-4 w-4 sm:h-6 sm:w-6" />
-        </div>
-        <div class="min-w-0">
-          <p class="text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Chưa đóng</p>
-          <h3 class="text-sm sm:text-2xl font-black text-black mt-0.5 sm:mt-1">{stats.unpaidInvoices} HĐ</h3>
-        </div>
+      <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+        <Receipt class="h-5 w-5 text-blue-500 mb-2" />
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Chưa đóng</p>
+        <h3 class="text-base sm:text-xl font-black text-black mt-0.5">{stats.unpaidInvoices} HĐ</h3>
       </div>
 
       <!-- Card 4: Expiring Contracts -->
-      <div class="bg-blue-100 border-2 border-black p-3 sm:p-5 rounded-lg shadow-secondary flex items-center gap-3 sm:gap-4 text-black">
-        <div class="p-2 sm:p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-          <Calendar class="h-4 w-4 sm:h-6 sm:w-6" />
-        </div>
-        <div class="min-w-0">
-          <p class="text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Sắp hết HĐ</p>
-          <h3 class="text-sm sm:text-2xl font-black text-black mt-0.5 sm:mt-1">{stats.expiringContracts}</h3>
-        </div>
+      <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+        <Calendar class="h-5 w-5 text-blue-500 mb-2" />
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Sắp hết HĐ</p>
+        <h3 class="text-base sm:text-xl font-black text-black mt-0.5">{stats.expiringContracts}</h3>
       </div>
     </div>
 
     <!-- Main Lists Section -->
     <div class="grid gap-6 lg:grid-cols-3">
       <!-- Left 2 Columns: Unpaid Invoices -->
-      <div class="lg:col-span-2 bg-blue-100 border-2 border-black rounded-lg shadow-secondary flex flex-col overflow-hidden">
-        <div class="p-4 border-b-2 border-black bg-zinc-100 flex items-center justify-between shrink-0">
+      <div class="lg:col-span-2 bg-white border-2 border-black rounded-lg shadow-secondary flex flex-col overflow-hidden">
+        <div class="p-4 border-b-2 border-black bg-zinc-50 flex items-center justify-between shrink-0">
           <h2 class="font-black text-black text-base flex items-center gap-2">
             Hoá đơn cần thu tiền <Receipt class="h-5 w-5" />
           </h2>
@@ -340,8 +324,8 @@
       </div>
 
       <!-- Right Column: Pending Incidents -->
-      <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary flex flex-col overflow-hidden">
-        <div class="p-4 border-b-2 border-black bg-zinc-100 flex items-center justify-between shrink-0">
+      <div class="bg-white border-2 border-black rounded-lg shadow-secondary flex flex-col overflow-hidden">
+        <div class="p-4 border-b-2 border-black bg-zinc-50 flex items-center justify-between shrink-0">
           <h2 class="font-black text-black text-base flex items-center gap-2">
             Sự cố cần xử lý <Wrench class="h-5 w-5" />
           </h2>

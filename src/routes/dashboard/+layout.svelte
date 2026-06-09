@@ -66,9 +66,7 @@
 </script>
 
 {#if user}
-<div class="min-h-screen bg-slate-50 flex flex-col font-sans relative">
-  <!-- Interactive Grid Background Overlay -->
-  <div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,black_1px,transparent_0)] bg-[size:16px_16px]"></div>
+<div class="min-h-screen bg-white flex flex-col font-sans relative">
 
   <!-- Top header for mobile -->
   <header class="bg-white border-b-2 border-black h-14 px-4 flex items-center justify-between sticky top-0 z-40 md:hidden shrink-0">
@@ -94,7 +92,7 @@
   <div class="flex flex-1 relative min-h-0">
     
     <!-- Sidebar (Desktop only) - Brutalist Style -->
-    <aside class="hidden md:flex md:w-64 bg-blue-100 text-black flex-col justify-between border-r-2 border-black sticky top-0 h-screen select-none shrink-0">
+    <aside class="hidden md:flex md:w-64 bg-white text-black flex-col justify-between border-r-2 border-black sticky top-0 h-screen select-none shrink-0">
       <div class="p-6 space-y-6">
         <!-- Logo -->
         <div class="flex items-center gap-3">
@@ -152,7 +150,7 @@
       ></div>
       
       <!-- Drawer menu -->
-      <aside class="fixed inset-y-0 left-0 w-64 bg-blue-100 text-black flex flex-col justify-between z-50 md:hidden border-r-2 border-black shadow-2xl animate-[slide-in_0.2s_ease-out]">
+      <aside class="fixed inset-y-0 left-0 w-64 bg-white text-black flex flex-col justify-between z-50 md:hidden border-r-2 border-black shadow-2xl animate-[slide-in_0.2s_ease-out]">
         <div class="p-6 space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">

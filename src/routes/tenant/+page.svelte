@@ -508,7 +508,7 @@
     <main class="flex-grow max-w-4xl w-full mx-auto p-4 space-y-6 pb-24 relative z-10">
       
       <!-- Welcome Header Profile Card - Styled as Brutallist Card -->
-      <div class="bg-blue-100 border-2 border-black text-black p-6 rounded-lg shadow-secondary relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="bg-white border-2 border-black text-black p-6 rounded-lg shadow-secondary relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
         
         <div class="relative z-10 flex items-center gap-4">
@@ -542,7 +542,7 @@
             <Pin class="h-4 w-4 text-black" />
             Bảng tin thông báo
           </h3>
-          <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden divide-y-2 divide-black">
+          <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden divide-y-2 divide-black">
             {#each announcements as ann}
               <div class="p-4 bg-white flex flex-col gap-1 hover:bg-slate-50 transition-colors">
                 <h4 class="font-black text-black text-sm flex items-center gap-2">
@@ -557,7 +557,7 @@
       {/if}
 
       <!-- TAB SELECTION: Brutallist style tabs -->
-      <div class="flex border-b-2 border-black shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap bg-blue-100 border-2 border-black rounded-lg p-1 shadow-sm gap-1 select-none">
+      <div class="flex border-b-2 border-black shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap bg-white border-2 border-black rounded-lg p-1 shadow-sm gap-1 select-none">
         <button 
           onclick={() => activeTab = 'home'}
           class="flex-grow min-w-[80px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'home' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
@@ -603,7 +603,7 @@
           <div class="space-y-4">
             <!-- Pending Bill Alert Box -->
             {#if pendingInvoice()}
-              <div class="bg-blue-100 border-2 border-black rounded-lg p-5 shadow-secondary flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="bg-white border-2 border-black rounded-lg p-5 shadow-secondary flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-start gap-3.5">
                   <div class="p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
                     <Receipt class="h-6 w-6" />
@@ -637,7 +637,7 @@
 
             <!-- General Help Grid info -->
             <div class="grid gap-4 sm:grid-cols-2">
-              <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary flex flex-col justify-between h-44">
+              <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary flex flex-col justify-between h-44">
                 <div class="flex items-center gap-2 border-b-2 border-black pb-2">
                   <Wrench class="h-5 w-5 text-black" />
                   <span class="font-black text-black text-sm">Gửi báo cáo sự cố</span>
@@ -650,7 +650,7 @@
                 </button>
               </div>
 
-              <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary flex flex-col justify-between h-44">
+              <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary flex flex-col justify-between h-44">
                 <div class="flex items-center gap-2 border-b-2 border-black pb-2">
                   <MessageSquare class="h-5 w-5 text-black" />
                   <span class="font-black text-black text-sm">Gửi lời nhắn lưu ý</span>
@@ -670,7 +670,7 @@
           <div class="space-y-4">
             {#if payingInvoice}
               <!-- VietQR Payment Modal Detail -->
-              <div class="bg-blue-100 border-2 border-black rounded-lg p-5 shadow-secondary space-y-4 animate-[scale-up_0.2s_ease-out]">
+              <div class="bg-white border-2 border-black rounded-lg p-5 shadow-secondary space-y-4 animate-[scale-up_0.2s_ease-out]">
                 <div class="flex justify-between items-center border-b-2 border-black pb-2">
                   <h3 class="font-black text-black text-sm flex items-center gap-1.5">
                     Thanh Toán Hóa Đơn {payingInvoice.id} <QrCode class="h-4.5 w-4.5" />
@@ -738,7 +738,7 @@
             {/if}
 
             <!-- Bills list history -->
-            <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden">
+            <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden">
               <div class="p-5 border-b-2 border-black bg-zinc-100 flex items-center gap-2">
                 <Receipt class="h-5 w-5 text-black" />
                 <h3 class="font-black text-black text-lg">Lịch sử hóa đơn</h3>
@@ -789,7 +789,7 @@
         {:else if activeTab === 'request'}
           <div class="space-y-6">
             <!-- Create repair ticket form -->
-            <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
+            <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
               <h3 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2">
                 Gửi báo cáo sự cố kỹ thuật phòng <Wrench class="h-5 w-5" />
               </h3>
@@ -873,7 +873,7 @@
             </div>
 
             <!-- Incidents history list -->
-            <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden">
+            <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden">
               <div class="p-5 border-b-2 border-black bg-zinc-100">
                 <h3 class="font-black text-black text-lg">Lịch sử sự cố đã gửi</h3>
               </div>
@@ -888,7 +888,7 @@
                         <div>
                           <div class="flex items-center gap-2">
                             <h4 class="font-black text-black text-sm">{req.title}</h4>
-                            <span class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase border border-black {req.status === 'completed' ? 'bg-green-150 text-green-800' : req.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : req.status === 'rejected' ? 'bg-zinc-100 text-zinc-500' : 'bg-red-50 text-red-800'}">
+                            <span class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase border border-black {req.status === 'completed' ? 'bg-green-150 text-green-800' : req.status === 'in_progress' ? 'bg-white text-blue-800' : req.status === 'rejected' ? 'bg-zinc-100 text-zinc-500' : 'bg-red-50 text-red-800'}">
                               {getStatusLabel(req.status)}
                             </span>
                             {#if req.priority === 'important'}
@@ -920,7 +920,7 @@
         <!-- 5. METERS TAB -->
         {:else if activeTab === 'meters'}
           <div class="space-y-6">
-            <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
+            <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
               <h3 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2">
                 Báo số điện / số nước cuối tháng <Zap class="h-5 w-5 text-black" />
               </h3>
@@ -1005,7 +1005,7 @@
             </div>
 
             <!-- Readings History -->
-            <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden">
+            <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden">
               <div class="p-5 border-b-2 border-black bg-zinc-100">
                 <h3 class="font-black text-black text-lg">Lịch sử tự báo số điện nước</h3>
               </div>
@@ -1054,7 +1054,7 @@
         {:else if activeTab === 'documents'}
           <div class="space-y-6">
             <!-- Contract details view -->
-            <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
+            <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
               <h3 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2">
                 Thông tin Hợp đồng thuê nhà <Calendar class="h-5 w-5 text-black" />
               </h3>
@@ -1089,7 +1089,7 @@
             </div>
 
             <!-- Documents Upload Form -->
-            <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
+            <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
               <h3 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2">
                 Đồng bộ giấy tờ tùy thân & Ảnh check-in nhận phòng <Camera class="h-5 w-5 text-black" />
               </h3>
@@ -1187,7 +1187,7 @@
         {:else if activeTab === 'note'}
           <div class="space-y-6">
             <!-- Create note form -->
-            <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
+            <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary space-y-4">
               <h3 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2">
                 Gửi lời nhắn / Đề xuất đặc biệt tới chủ trọ <MessageSquare class="h-5 w-5 text-black" />
               </h3>
@@ -1219,7 +1219,7 @@
             </div>
 
             <!-- Notes list history -->
-            <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden">
+            <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden">
               <div class="p-5 border-b-2 border-black bg-zinc-100">
                 <h3 class="font-black text-black text-lg">Lời nhắn đã gửi</h3>
               </div>

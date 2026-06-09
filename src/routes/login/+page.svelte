@@ -133,7 +133,7 @@
   <div class="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,black_1px,transparent_0)] bg-[size:16px_16px]"></div>
 
   <!-- Left Panel: Brutallist Graphic Branding -->
-  <div class="hidden md:flex md:w-1/2 bg-blue-100 border-r-2 border-black flex-col justify-between p-12 relative">
+  <div class="hidden md:flex md:w-1/2 bg-white border-r-2 border-black flex-col justify-between p-12 relative">
     <div class="absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
     
     <div class="flex items-center gap-3 relative z-10">
@@ -161,9 +161,9 @@
   <div class="flex-1 flex items-center justify-center p-6 md:p-12 relative">
     
     <!-- Brutallist login window panel -->
-    <div class="w-full max-w-md bg-blue-100 border-2 border-black rounded-lg shadow-primary overflow-hidden flex flex-col">
+    <div class="w-full max-w-md bg-white border-2 border-black rounded-lg shadow-primary overflow-hidden flex flex-col">
       <!-- macOS style header window -->
-      <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+      <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
         <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
         <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
         <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>

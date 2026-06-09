@@ -19,7 +19,7 @@ function _page($$renderer, $$props) {
 		});
 		$$renderer.push(`<div class="space-y-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><h1 class="text-xl sm:text-2xl font-black text-black leading-none">Quản Lý Hóa Đơn</h1> <p class="text-zinc-500 text-xs sm:text-sm mt-1 font-bold">Lịch sử xuất hóa đơn và đối soát thanh toán</p></div> <a href="/dashboard/invoices/bulk" class="bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer font-black text-sm w-full sm:w-auto">Tạo hóa đơn loạt `);
 		Arrow_right($$renderer, { class: "h-4 w-4" });
-		$$renderer.push(`<!----></a></div> <div class="bg-blue-100 border-2 border-black p-4 rounded-lg shadow-secondary grid gap-4 sm:grid-cols-3 items-end"><div class="space-y-1"><span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Trạng thái thanh toán</span> `);
+		$$renderer.push(`<!----></a></div> <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary grid gap-4 sm:grid-cols-3 items-end"><div class="space-y-1"><span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Trạng thái thanh toán</span> `);
 		$$renderer.select({
 			value: statusFilter,
 			class: "w-full border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none bg-white font-bold text-black"

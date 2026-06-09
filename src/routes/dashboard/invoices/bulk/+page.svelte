@@ -246,17 +246,15 @@
       <Loader2 class="h-10 w-10 text-black animate-spin" />
     </div>
   {:else if properties.length === 0}
-    <div class="bg-blue-100 border-2 border-black p-8 rounded-lg text-center max-w-md mx-auto shadow-secondary">
-      <div class="bg-white border-2 border-black w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-secondary text-black">
-        <AlertCircle class="h-8 w-8" />
-      </div>
+    <div class="bg-white border-2 border-black p-8 rounded-lg text-center max-w-md mx-auto shadow-secondary">
+              <AlertCircle class="h-8 w-8" />
       <p class="font-black text-black">Chưa có tòa nhà</p>
       <p class="text-zinc-600 text-sm mt-1 font-semibold">Vui lòng tạo tòa nhà trước khi tính hóa đơn.</p>
     </div>
   {:else}
     <form onsubmit={handleSubmitBulkInvoices} class="space-y-6">
       <!-- Top selectors card -->
-      <div class="bg-blue-100 border-2 border-black p-5 rounded-lg shadow-secondary grid gap-4 sm:grid-cols-3">
+      <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary grid gap-4 sm:grid-cols-3">
         <div class="space-y-1">
           <label for="b-prop" class="text-xs font-bold text-zinc-600 uppercase tracking-wider block">Chọn tòa nhà</label>
           <select 
@@ -295,8 +293,8 @@
       </div>
 
       <!-- Meter inputs table -->
-      <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary overflow-hidden flex flex-col">
-        <div class="p-4 border-b-2 border-black bg-zinc-100 flex items-center justify-between shrink-0">
+      <div class="bg-white border-2 border-black rounded-lg shadow-secondary overflow-hidden flex flex-col">
+        <div class="p-4 border-b-2 border-black bg-zinc-50 flex items-center justify-between shrink-0">
           <h2 class="font-black text-black text-base flex items-center gap-2">
             Nhập chỉ số điện nước cuối kỳ <Receipt class="h-5 w-5" />
           </h2>
@@ -374,7 +372,7 @@
           </div>
 
           <!-- Form Submit Footer -->
-          <div class="p-6 border-t-2 border-black bg-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0">
+          <div class="p-6 border-t-2 border-black bg-zinc-50 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0">
             <div class="flex items-center gap-2 text-xs text-zinc-600 font-bold max-w-md">
               <AlertCircle class="h-4.5 w-4.5 text-blue-600 shrink-0" />
               <span>Khi ấn xác nhận, hệ thống sẽ tự động tính toán điện nước, cộng phí dịch vụ cố định và gửi hóa đơn đến khách thuê.</span>

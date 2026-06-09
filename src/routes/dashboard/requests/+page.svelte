@@ -138,7 +138,7 @@
   </div>
 
   <!-- Filters -->
-  <div class="bg-blue-100 border-2 border-black p-4 rounded-lg shadow-secondary flex flex-wrap gap-4 items-center">
+  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-wrap gap-4 items-center">
     <div class="space-y-1">
       <span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span>
       <select 
@@ -171,10 +171,8 @@
       <Loader2 class="h-10 w-10 text-black animate-spin" />
     </div>
   {:else if filteredRequests().length === 0}
-    <div class="bg-blue-100 border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
-      <div class="bg-white border-2 border-black w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-secondary text-black">
-        <Wrench class="h-7 w-7" />
-      </div>
+    <div class="bg-white border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
+              <Wrench class="h-7 w-7" />
       <h3 class="font-black text-black text-lg">Không có yêu cầu sự cố</h3>
       <p class="text-zinc-650 text-sm mt-2 font-semibold">Tuyệt vời! Hiện tại không ghi nhận sự cố nào từ cư dân.</p>
     </div>
@@ -189,7 +187,7 @@
           onkeydown={(e) => e.key === 'Enter' && (selectedRequest = req, replyText = req.response || '', isDetailOpen = true)}
           role="button"
           tabindex="0"
-          class="border-2 border-black bg-blue-100 p-5 rounded-lg shadow-secondary hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
+          class="border-2 border-black bg-white p-5 rounded-lg shadow-secondary hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
         >
           <div class="flex justify-between items-start gap-2 mb-3">
             <div>
@@ -235,13 +233,13 @@
     >
       <!-- Drawer Content: Brutallist Panel border-l-2 -->
       <div 
-        class="bg-blue-100 w-full max-w-lg h-full border-l-2 border-black shadow-primary flex flex-col justify-between overflow-hidden animate-[slide-left_0.2s_ease-out]"
+        class="bg-white w-full max-w-lg h-full border-l-2 border-black shadow-primary flex flex-col justify-between overflow-hidden animate-[slide-left_0.2s_ease-out]"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- Windows Header style -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>

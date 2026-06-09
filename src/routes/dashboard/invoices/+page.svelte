@@ -161,7 +161,7 @@
   </div>
 
   <!-- Filters -->
-  <div class="bg-blue-100 border-2 border-black p-4 rounded-lg shadow-secondary grid gap-4 sm:grid-cols-3 items-end">
+  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary grid gap-4 sm:grid-cols-3 items-end">
     <div class="space-y-1">
       <span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Trạng thái thanh toán</span>
       <select 
@@ -200,7 +200,7 @@
       <Loader2 class="h-10 w-10 text-black animate-spin" />
     </div>
   {:else if filteredInvoices().length === 0}
-    <div class="bg-blue-100 border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
+    <div class="bg-white border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary">
       <Receipt class="h-12 w-12 text-black mx-auto mb-3" />
       <h3 class="font-black text-black text-lg">Không tìm thấy hóa đơn nào</h3>
       <p class="text-zinc-500 text-sm mt-2 font-semibold">Không có hóa đơn nào trùng khớp với bộ lọc hiện tại.</p>
@@ -301,13 +301,13 @@
     >
       <!-- Dialog Content: Brutallist Panel with macOS Header -->
       <div 
-        class="bg-blue-100 rounded-lg w-full max-w-2xl border-2 border-black shadow-primary overflow-hidden relative flex flex-col max-h-[90vh] animate-[scale-up_0.2s_ease-out]"
+        class="bg-white rounded-lg w-full max-w-2xl border-2 border-black shadow-primary overflow-hidden relative flex flex-col max-h-[90vh] animate-[scale-up_0.2s_ease-out]"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- macOS Style Header -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>

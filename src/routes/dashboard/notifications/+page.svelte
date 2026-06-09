@@ -210,8 +210,8 @@
 
   <div class="grid gap-6 lg:grid-cols-2">
     <!-- Left Column: Tenant Special Notes (Direct Messages) -->
-    <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary flex flex-col h-[70vh] overflow-hidden">
-      <div class="p-4 border-b-2 border-black bg-zinc-100 flex items-center justify-between shrink-0 select-none">
+    <div class="bg-white border-2 border-black rounded-lg shadow-secondary flex flex-col h-[70vh] overflow-hidden">
+      <div class="p-4 border-b-2 border-black bg-zinc-50 flex items-center justify-between shrink-0 select-none">
         <h2 class="font-black text-black text-base flex items-center gap-2">
           Lời nhắn & Đề nghị từ khách <MessageSquare class="h-5 w-5" />
         </h2>
@@ -251,7 +251,7 @@
                   <span class="text-[10px] text-zinc-500 font-bold uppercase">Đã xem</span>
                 {/if}
               </div>
-              <p class="text-black text-xs leading-relaxed bg-blue-100/30 p-2.5 rounded-lg border-2 border-black shadow-secondary font-semibold">
+              <p class="text-black text-xs leading-relaxed bg-white/30 p-2.5 rounded-lg border-2 border-black shadow-secondary font-semibold">
                 {note.content}
               </p>
             </div>
@@ -261,8 +261,8 @@
     </div>
 
     <!-- Right Column: Announcements Pinboard -->
-    <div class="bg-blue-100 border-2 border-black rounded-lg shadow-secondary flex flex-col h-[70vh] overflow-hidden">
-      <div class="p-4 border-b-2 border-black bg-zinc-100 flex items-center justify-between shrink-0 select-none">
+    <div class="bg-white border-2 border-black rounded-lg shadow-secondary flex flex-col h-[70vh] overflow-hidden">
+      <div class="p-4 border-b-2 border-black bg-zinc-50 flex items-center justify-between shrink-0 select-none">
         <h2 class="font-black text-black text-base flex items-center gap-2">
           Bảng tin thông báo tòa nhà <Bell class="h-5 w-5" />
         </h2>
@@ -274,9 +274,7 @@
         </div>
       {:else if announcements.length === 0}
         <div class="flex-grow p-8 flex flex-col items-center justify-center text-center bg-white">
-          <div class="bg-blue-100 border-2 border-black w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-secondary text-black">
-            <AlertCircle class="h-7 w-7" />
-          </div>
+                      <AlertCircle class="h-7 w-7" />
           <p class="font-black text-black text-base">Bảng tin đang trống</p>
           <p class="text-zinc-500 text-xs font-semibold mt-1">Đăng thông báo ghim để cư dân trong nhà trọ cập nhật tin tức.</p>
         </div>
@@ -323,13 +321,13 @@
     >
       <!-- Dialog Content: Brutallist macOS Window style -->
       <div 
-        class="bg-blue-100 rounded-lg w-full max-w-lg border-2 border-black shadow-primary overflow-hidden relative flex flex-col animate-[scale-up_0.2s_ease-out]"
+        class="bg-white rounded-lg w-full max-w-lg border-2 border-black shadow-primary overflow-hidden relative flex flex-col animate-[scale-up_0.2s_ease-out]"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- Windows Header style -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>

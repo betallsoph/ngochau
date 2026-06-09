@@ -179,10 +179,8 @@
       </div>
     </div>
   {:else if properties.length === 0}
-    <div class="bg-blue-100 border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary mt-8">
-      <div class="bg-white border-2 border-black w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-secondary">
-        <Building2 class="h-8 w-8 text-black" />
-      </div>
+    <div class="bg-white border-2 border-black p-12 rounded-lg text-center max-w-md mx-auto shadow-secondary mt-8">
+              <Building2 class="h-8 w-8 text-black" />
       <h3 class="font-black text-black text-lg">Chưa có tòa nhà nào</h3>
       <p class="text-zinc-600 text-sm mt-2 leading-relaxed font-semibold">
         Bắt đầu bằng cách thêm tòa nhà đầu tiên của bạn để thiết lập các phòng trọ, quản lý dịch vụ và tính tiền hàng tháng.
@@ -204,13 +202,11 @@
           onkeydown={(e) => e.key === 'Enter' && (selectedProperty = prop, isDetailDrawerOpen = true)}
           role="button"
           tabindex="0"
-          class="bg-blue-100 border-2 border-black rounded-lg p-5 shadow-secondary hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
+          class="bg-white border-2 border-black rounded-lg p-5 shadow-secondary hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
         >
           <div class="flex justify-between items-start mb-4">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="bg-white border-2 border-black p-2.5 rounded-lg text-black shrink-0 shadow-secondary">
-                <Building2 class="h-6 w-6" />
-              </div>
+                              <Building2 class="h-6 w-6" />
               <div class="min-w-0">
                 <h3 class="font-black text-black text-lg leading-tight truncate">{prop.name}</h3>
                 <p class="text-zinc-600 text-xs mt-1 truncate font-semibold">{prop.address}</p>
@@ -261,13 +257,13 @@
     >
       <!-- Dialog Content: Brutalist MacOS Window Style -->
       <div 
-        class="bg-blue-100 rounded-lg w-full max-w-lg border-2 border-black shadow-primary overflow-hidden relative flex flex-col animate-[scale-up_0.2s_ease-out]"
+        class="bg-white rounded-lg w-full max-w-lg border-2 border-black shadow-primary overflow-hidden relative flex flex-col animate-[scale-up_0.2s_ease-out]"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- Header Windows macOS style -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>
@@ -366,13 +362,13 @@
     >
       <!-- Drawer Content: Brutalist Panel border-l-2 -->
       <div 
-        class="bg-blue-100 w-full max-w-md h-full border-l-2 border-black shadow-primary flex flex-col justify-between animate-[slide-left_0.2s_ease-out] overflow-hidden"
+        class="bg-white w-full max-w-md h-full border-l-2 border-black shadow-primary flex flex-col justify-between animate-[slide-left_0.2s_ease-out] overflow-hidden"
         onclick={(e) => e.stopPropagation()}
         onkeydown={(e) => e.stopPropagation()}
         role="dialog"
       >
         <!-- Header Windows macOS style -->
-        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-100 border-b-2 border-black shrink-0 select-none">
+        <div class="flex items-center gap-2 px-4 py-3 bg-zinc-50 border-b-2 border-black shrink-0 select-none">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-black"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></div>
@@ -388,9 +384,7 @@
         <div class="p-6 space-y-6 flex-1 overflow-y-auto">
           <!-- Title & basic details -->
           <div class="flex items-center gap-3 border-b-2 border-black pb-4 shrink-0">
-            <div class="bg-white border-2 border-black p-2.5 rounded-lg shadow-secondary text-black">
-              <Building2 class="h-5 w-5" />
-            </div>
+                          <Building2 class="h-5 w-5" />
             <div>
               <h3 class="font-black text-black text-lg leading-tight">{selectedProperty.name}</h3>
               <p class="text-zinc-600 text-xs mt-1 font-bold">Mã viết tắt: {selectedProperty.shortName}</p>

@@ -183,8 +183,28 @@
       </div>
     </div>
   {:else}
-    <!-- Stats Cards Grid: 2 cols mobile, 4 cols desktop -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- Mobile: compact inline stats strip (no cards) -->
+    <div class="sm:hidden flex items-center gap-0 border-2 border-black rounded-lg overflow-hidden divide-x-2 divide-black text-center">
+      <div class="flex-1 py-3 px-2">
+        <p class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Doanh thu</p>
+        <p class="text-xs font-black text-black mt-0.5 truncate">{formatCurrency(stats.totalRevenue)}</p>
+      </div>
+      <div class="flex-1 py-3 px-2">
+        <p class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Lấp đầy</p>
+        <p class="text-xs font-black text-black mt-0.5">{stats.totalRooms > 0 ? Math.round((stats.occupiedRooms / stats.totalRooms) * 100) : 0}%</p>
+      </div>
+      <div class="flex-1 py-3 px-2">
+        <p class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Chưa đóng</p>
+        <p class="text-xs font-black text-blue-500 mt-0.5">{stats.unpaidInvoices} HĐ</p>
+      </div>
+      <div class="flex-1 py-3 px-2">
+        <p class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Hết HĐ</p>
+        <p class="text-xs font-black text-black mt-0.5">{stats.expiringContracts}</p>
+      </div>
+    </div>
+
+    <!-- Desktop: stat cards grid -->
+    <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <!-- Card 1: Revenue -->
       <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
         <DollarSign class="h-5 w-5 text-blue-500 mb-2" />

@@ -221,7 +221,19 @@
   </div>
 
   <!-- Quick stats -->
-  <div class="grid grid-cols-2 gap-3">
+  <!-- Mobile: 1-line inline strip -->
+  <div class="sm:hidden flex items-center border-2 border-black rounded-lg overflow-hidden divide-x-2 divide-black text-center">
+    <div class="flex-1 py-3 px-2">
+      <p class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Khách thuê</p>
+      <p class="text-xs font-black text-black mt-0.5">{tenants.length} người</p>
+    </div>
+    <div class="flex-1 py-3 px-2">
+      <p class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Tiền cọc giữ</p>
+      <p class="text-xs font-black text-black mt-0.5 truncate">{formatCurrency(tenants.reduce((sum, t) => sum + t.deposit, 0))}</p>
+    </div>
+  </div>
+  <!-- Desktop: stat cards -->
+  <div class="hidden sm:grid sm:grid-cols-2 gap-3">
     <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
       <Users class="h-5 w-5 text-blue-500 mb-2" />
       <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Khách thuê</p>

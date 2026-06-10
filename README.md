@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Roomio - Hệ thống quản lý nhà trọ
 
-## Getting Started
+Roomio là ứng dụng web hỗ trợ chủ trọ quản lý vận hành nhà trọ: tòa nhà, phòng, khách thuê, dịch vụ, chỉ số điện nước, hóa đơn và yêu cầu sửa chữa. Ứng dụng được thiết kế theo mô hình multi-tenant SaaS, trong đó mỗi chủ trọ (landlord) quản lý dữ liệu riêng của mình và Super Admin quản lý toàn hệ thống.
 
-First, run the development server:
+## Tính năng chính
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Dành cho chủ trọ (Landlord)
+
+- Quản lý nhiều cơ sở (tòa nhà), mỗi cơ sở có thể chia thành các block.
+- Quản lý phòng: loại phòng, diện tích, giá thuê, trạng thái (trống, đã thanh toán, còn nợ), tài sản bàn giao trong phòng.
+- Quản lý khách thuê: thông tin cá nhân, CCCD, tiền cọc, ngày chuyển vào.
+- Cấu hình dịch vụ tùy biến: điện, nước (tính theo đồng hồ), wifi, rác, gửi xe (tính cố định theo phòng, người hoặc xe), có thể ghi đè đơn giá riêng cho từng phòng.
+- Ghi chỉ số điện nước hàng tháng, kèm ảnh chụp đồng hồ đối chiếu.
+- Tạo hóa đơn theo từng phòng hoặc tạo hàng loạt theo tháng, theo dõi trạng thái thanh toán (đã trả, chờ trả, quá hạn, trả một phần).
+- Tiếp nhận và xử lý yêu cầu sửa chữa từ khách thuê, phân công cho nhân viên.
+- Gửi thông báo đến toàn bộ hoặc theo từng cơ sở, block, phòng.
+- Cấu hình thông tin ngân hàng nhận thanh toán chuyển khoản.
+- Dashboard tổng quan: doanh thu, tỷ lệ lấp đầy, công nợ.
+
+### Dành cho khách thuê (Tenant)
+
+- Xem thông tin phòng, hóa đơn và lịch sử thanh toán.
+- Gửi yêu cầu sửa chữa (điện, nước, internet...) kèm ảnh sự cố.
+- Nhận thông báo từ chủ trọ.
+
+### Dành cho Super Admin
+
+- Quản lý toàn bộ tài khoản chủ trọ và gói dịch vụ (FREE, PREMIUM, ENTERPRISE).
+
+## Công nghệ sử dụng
+
+| Thành phần | Công nghệ |
+| --- | --- |
+| Framework | SvelteKit 2 (Svelte 5) |
+| Ngôn ngữ | TypeScript |
+| Giao diện | Tailwind CSS 4, Lucide Icons, svelte-sonner |
+| ORM | Prisma 6 |
+| Cơ sở dữ liệu | SQLite (môi trường phát triển) |
+| Build tool | Vite 8 |
+| Deploy | @sveltejs/adapter-node |
+
+## Yêu cầu môi trường
+
+- Node.js 20 trở lên
+- npm
+
+## Cài đặt và chạy dự án
+
+1. Cài đặt dependencies (lệnh này cũng tự động chạy `prisma generate`):
+
+   ```bash
+   npm install
+   ```
+
+2. Khởi tạo cơ sở dữ liệu:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+3. Tạo dữ liệu mẫu:
+
+   ```bash
+   npm run seed
+   ```
+
+4. Chạy server phát triển:
+
+   ```bash
+   npm run dev
+   ```
+
+   Ứng dụng chạy tại `http://localhost:5173`.
+
+### Tài khoản mẫu (sau khi seed)
+
+| Vai trò | Email | Mật khẩu |
+| --- | --- | --- |
+| Super Admin | superadmin@ngochau.com | admin |
+| Chủ trọ | ngochau@gmail.com | password |
+| Nhân viên | nhanvien@nhatro.com | staff |
+| Khách thuê | (tạo ngẫu nhiên khi seed) | 123456 |
+
+## Các lệnh có sẵn
+
+| Lệnh | Mô tả |
+| --- | --- |
+| `npm run dev` | Chạy server phát triển |
+| `npm run build` | Build bản production |
+| `npm run start` | Chạy bản build production |
+| `npm run preview` | Xem trước bản build |
+| `npm run check` | Kiểm tra type với svelte-check |
+| `npm run lint` | Kiểm tra format (Prettier) và lint (ESLint) |
+| `npm run format` | Tự động format code |
+| `npm run seed` | Tạo dữ liệu mẫu |
+
+## Cấu trúc thư mục
+
+```
+prisma/
+  schema.prisma          Định nghĩa cơ sở dữ liệu (Prisma schema)
+  seed.ts                Script tạo dữ liệu mẫu
+  migrations/            Lịch sử migration
+src/
+  lib/
+    db.ts                Prisma client (singleton)
+  routes/
+    +page.svelte         Trang chủ (landing)
+    login/               Đăng nhập, đăng ký
+    dashboard/           Khu vực quản lý của chủ trọ
+      buildings/         Quản lý tòa nhà
+      rooms/             Quản lý phòng
+      tenants/           Quản lý khách thuê
+      invoices/          Quản lý hóa đơn (kèm tạo hàng loạt)
+      requests/          Yêu cầu sửa chữa
+      notifications/     Thông báo
+      settings/          Cài đặt (dịch vụ, ngân hàng)
+    tenant/              Cổng dành cho khách thuê
+    super-admin/         Trang quản trị hệ thống
+    api/                 Các REST API endpoint (SvelteKit server routes)
+static/                  Tài nguyên tĩnh (font, robots.txt)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Mô hình dữ liệu
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Các thực thể chính trong `prisma/schema.prisma`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `User`: tài khoản chung, phân vai trò qua trường `role` (SUPER_ADMIN, LANDLORD, STAFF, TENANT). Mỗi vai trò có bảng profile tương ứng (`LandlordProfile`, `StaffProfile`, `TenantProfile`).
+- `Property` / `Block` / `Room`: cấu trúc tòa nhà - block - phòng.
+- `Service` / `RoomServiceConfig`: dịch vụ của chủ trọ và cấu hình áp dụng cho từng phòng (đơn giá riêng, số lượng).
+- `MeterReading`: chỉ số điện nước theo tháng.
+- `Invoice` / `InvoiceItem`: hóa đơn và các dòng chi tiết.
+- `MaintenanceRequest`: yêu cầu sửa chữa, có thể phân công cho nhân viên.
+- `Announcement`, `SpecialNote`, `Message`: thông báo và trao đổi.
 
-## Learn More
+## Ghi chú
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Dự án đang ở giai đoạn phát triển, dùng SQLite và cơ chế xác thực đơn giản (chưa phù hợp cho môi trường production).
+- Khi thay đổi schema, chạy `npx prisma migrate dev` để tạo migration mới.

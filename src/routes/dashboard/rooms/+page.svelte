@@ -409,28 +409,28 @@
 
 <div class="space-y-6">
   <!-- Top Section: Filters and Title -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-black text-black leading-none">Sơ Đồ Phòng Trọ</h1>
+      <h1 class="text-xl sm:text-2xl font-black text-black leading-none">Sơ Đồ Phòng Trọ</h1>
       <p class="text-zinc-500 text-sm mt-1.5 font-bold uppercase tracking-wider">Quản lý trạng thái, chỉ số và thiết bị bàn giao</p>
     </div>
     
     <button 
       onclick={() => isAddDialogOpen = true}
-      class="bg-blue-300 hover:bg-blue-400 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-primary hover:translate-x-[5px] hover:translate-y-[6px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-bold text-sm"
+      class="w-full sm:w-auto bg-blue-300 hover:bg-blue-400 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer font-bold text-sm"
     >
       Thêm phòng <Plus class="h-4.5 w-4.5" />
     </button>
   </div>
 
   <!-- Filter bar -->
-  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-col md:flex-row gap-4 items-center justify-between">
-    <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
+  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+    <div class="grid gap-3 sm:grid-cols-2">
       <div class="space-y-1">
         <span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Chọn tòa nhà</span>
         <select 
           bind:value={selectedPropertyId} 
-          class="border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black w-60"
+          class="w-full border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black"
         >
           {#each properties as prop}
             <option value={prop.id}>{prop.name}</option>
@@ -443,7 +443,7 @@
           <span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Dãy/Phân cụm</span>
           <select 
             bind:value={selectedBlockId} 
-            class="border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black w-44"
+            class="w-full border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black"
           >
             <option value="all">Tất cả dãy</option>
             {#each getActiveProperty()!.blocks as block}
@@ -455,7 +455,7 @@
     </div>
 
     <!-- Quick Legend -->
-    <div class="flex gap-4 text-xs font-bold text-zinc-600 self-end md:self-auto select-none">
+    <div class="flex flex-wrap gap-4 text-xs font-bold text-zinc-600 mt-3 select-none">
       <div class="flex items-center gap-1.5">
         <span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-white"></span>
         <span>Phòng trống</span>
@@ -482,29 +482,61 @@
       <p class="text-zinc-600 text-sm mt-2 font-semibold">Bắt đầu bằng cách tạo các phòng trọ để thêm thông tin khách thuê.</p>
     </div>
   {:else}
-    <!-- Rooms Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <!-- Mobile card list (hidden on sm+) -->
+    <div class="sm:hidden border-2 border-black rounded-lg overflow-hidden divide-y-2 divide-black">
       {#each rooms as room}
-        {@const statusColor = room.status === 'empty' ? 'border-black bg-white' : room.status === 'paid' ? 'border-black bg-green-200' : 'border-black bg-red-200'}
-        {@const statusBadge = room.status === 'empty' ? 'text-zinc-500' : room.status === 'paid' ? 'text-green-800' : 'text-red-800'}
-        
-        <button
-          onclick={() => { selectedRoom = room; activeTab = 'general'; isDetailOpen = true; }}
-          class="border-2 rounded-lg p-4 flex flex-col justify-between items-start text-left shadow-secondary hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer h-32 focus:outline-none focus:ring-2 focus:ring-blue-300 {statusColor}"
-        >
-          <div>
-            <span class="text-xl font-black text-black leading-none">{room.roomNumber}</span>
-            <p class="text-[9px] font-black text-zinc-600 uppercase tracking-wider mt-1">{getRoomTypeLabel(room.roomType)}</p>
+        {@const statusBg = room.status === 'empty' ? 'bg-white' : room.status === 'paid' ? 'bg-green-100' : 'bg-red-100'}
+        {@const statusText = room.status === 'empty' ? 'text-zinc-500' : room.status === 'paid' ? 'text-green-800' : 'text-red-800'}
+        {@const statusLabel = room.status === 'empty' ? 'Trống' : room.status === 'paid' ? 'Đã đóng' : 'Còn nợ'}
+        <div class="p-4 space-y-2 {statusBg}">
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <h3 class="font-black text-black text-base leading-none">Phòng {room.roomNumber}</h3>
+              <p class="text-zinc-500 text-xs mt-0.5 font-semibold">{getRoomTypeLabel(room.roomType)}</p>
+            </div>
+            <span class="text-[10px] px-2 py-1 rounded-md border-2 border-black font-black uppercase {statusText} {statusBg}">{statusLabel}</span>
           </div>
-          
-          <div class="w-full flex justify-between items-end border-t border-black/15 pt-2 mt-2">
-            <span class="text-[10px] font-black uppercase tracking-wider {statusBadge}">
-              {room.status === 'empty' ? 'Trống' : room.status === 'paid' ? 'Đã đóng' : 'Còn nợ'}
-            </span>
-            <span class="text-xs font-black text-black">{formatCurrency(room.monthlyRent)}</span>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-zinc-500 font-bold">{room.tenant ? room.tenant.user.name : 'Trống'}</p>
+              <p class="text-sm font-black text-black">{formatCurrency(room.monthlyRent)}/tháng</p>
+            </div>
+            <button
+              onclick={() => { selectedRoom = room; activeTab = 'general'; isDetailOpen = true; }}
+              class="bg-blue-300 text-black border-2 border-black px-3 py-1.5 rounded-[6px] text-xs font-black shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
+            >
+              Chi tiết
+            </button>
           </div>
-        </button>
+        </div>
       {/each}
+    </div>
+
+    <!-- Desktop grid (hidden on mobile) -->
+    <div class="hidden sm:block">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {#each rooms as room}
+          {@const statusColor = room.status === 'empty' ? 'border-black bg-white' : room.status === 'paid' ? 'border-black bg-green-200' : 'border-black bg-red-200'}
+          {@const statusBadge = room.status === 'empty' ? 'text-zinc-500' : room.status === 'paid' ? 'text-green-800' : 'text-red-800'}
+          
+          <button
+            onclick={() => { selectedRoom = room; activeTab = 'general'; isDetailOpen = true; }}
+            class="border-2 rounded-lg p-4 flex flex-col justify-between items-start text-left shadow-secondary hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer h-32 focus:outline-none focus:ring-2 focus:ring-blue-300 {statusColor}"
+          >
+            <div>
+              <span class="text-xl font-black text-black leading-none">{room.roomNumber}</span>
+              <p class="text-[9px] font-black text-zinc-600 uppercase tracking-wider mt-1">{getRoomTypeLabel(room.roomType)}</p>
+            </div>
+            
+            <div class="w-full flex justify-between items-end border-t border-black/15 pt-2 mt-2">
+              <span class="text-[10px] font-black uppercase tracking-wider {statusBadge}">
+                {room.status === 'empty' ? 'Trống' : room.status === 'paid' ? 'Đã đóng' : 'Còn nợ'}
+              </span>
+              <span class="text-xs font-black text-black">{formatCurrency(room.monthlyRent)}</span>
+            </div>
+          </button>
+        {/each}
+      </div>
     </div>
   {/if}
 
@@ -682,9 +714,7 @@
           <div class="flex-1 flex flex-col min-h-0">
             <!-- Header Title Info -->
             <div class="flex items-center gap-3 border-b-2 border-black pb-4 shrink-0">
-              <div class="bg-blue-300 border-2 border-black p-2.5 rounded-lg shadow-secondary text-black">
-                <Home class="h-6 w-6" />
-              </div>
+              <Home class="h-6 w-6 text-blue-500" />
               <div>
                 <h3 class="font-black text-black text-lg leading-none">Phòng {selectedRoom.roomNumber}</h3>
                 <p class="text-zinc-600 text-xs mt-1.5 font-bold uppercase tracking-wider">

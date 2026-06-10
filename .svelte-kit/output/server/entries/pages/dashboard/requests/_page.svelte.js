@@ -14,7 +14,7 @@ function _page($$renderer, $$props) {
 				return true;
 			});
 		});
-		$$renderer.push(`<div class="space-y-6"><div><h1 class="text-2xl font-black text-black">Báo Cáo Sự Cố</h1> <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý và giải quyết các yêu cầu sửa chữa từ khách thuê phòng</p></div> <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-wrap gap-4 items-center"><div class="space-y-1"><span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span> `);
+		$$renderer.push(`<div class="space-y-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><h1 class="text-xl sm:text-2xl font-black text-black">Báo Cáo Sự Cố</h1> <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý và giải quyết các yêu cầu sửa chữa từ khách thuê phòng</p></div></div> <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary"><div class="flex gap-4 overflow-x-auto pb-1"><div class="space-y-1 shrink-0"><span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span> `);
 		$$renderer.select({
 			value: statusFilter,
 			class: "border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"
@@ -35,7 +35,7 @@ function _page($$renderer, $$props) {
 				$$renderer.push(`Từ chối (Rejected)`);
 			});
 		});
-		$$renderer.push(`</div> <div class="space-y-1"><span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Mức độ khẩn cấp</span> `);
+		$$renderer.push(`</div> <div class="space-y-1 shrink-0"><span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Mức độ khẩn cấp</span> `);
 		$$renderer.select({
 			value: priorityFilter,
 			class: "border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"
@@ -50,7 +50,7 @@ function _page($$renderer, $$props) {
 				$$renderer.push(`Bình thường`);
 			});
 		});
-		$$renderer.push(`</div></div> `);
+		$$renderer.push(`</div></div></div> `);
 		$$renderer.push("<!--[0-->");
 		$$renderer.push(`<div class="h-[50vh] w-full flex items-center justify-center">`);
 		Loader_circle($$renderer, { class: "h-10 w-10 text-black animate-spin" });

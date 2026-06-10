@@ -14,12 +14,12 @@ function _page($$renderer, $$props) {
 		function getActiveProperty() {
 			return properties.find((p) => p.id === selectedPropertyId);
 		}
-		$$renderer.push(`<div class="space-y-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 class="text-2xl font-black text-black leading-none">Sơ Đồ Phòng Trọ</h1> <p class="text-zinc-500 text-sm mt-1.5 font-bold uppercase tracking-wider">Quản lý trạng thái, chỉ số và thiết bị bàn giao</p></div> <button class="bg-blue-300 hover:bg-blue-400 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-primary hover:translate-x-[5px] hover:translate-y-[6px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-bold text-sm">Thêm phòng `);
+		$$renderer.push(`<div class="space-y-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><h1 class="text-xl sm:text-2xl font-black text-black leading-none">Sơ Đồ Phòng Trọ</h1> <p class="text-zinc-500 text-sm mt-1.5 font-bold uppercase tracking-wider">Quản lý trạng thái, chỉ số và thiết bị bàn giao</p></div> <button class="w-full sm:w-auto bg-blue-300 hover:bg-blue-400 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer font-bold text-sm">Thêm phòng `);
 		Plus($$renderer, { class: "h-4.5 w-4.5" });
-		$$renderer.push(`<!----></button></div> <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-col md:flex-row gap-4 items-center justify-between"><div class="flex flex-wrap items-center gap-4 w-full md:w-auto"><div class="space-y-1"><span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Chọn tòa nhà</span> `);
+		$$renderer.push(`<!----></button></div> <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary"><div class="grid gap-3 sm:grid-cols-2"><div class="space-y-1"><span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Chọn tòa nhà</span> `);
 		$$renderer.select({
 			value: selectedPropertyId,
-			class: "border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black w-60"
+			class: "w-full border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black"
 		}, ($$renderer) => {
 			$$renderer.push(`<!--[-->`);
 			const each_array = ensure_array_like(properties);
@@ -37,7 +37,7 @@ function _page($$renderer, $$props) {
 			$$renderer.push(`<div class="space-y-1"><span class="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Dãy/Phân cụm</span> `);
 			$$renderer.select({
 				value: selectedBlockId,
-				class: "border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black w-44"
+				class: "w-full border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-bold text-black"
 			}, ($$renderer) => {
 				$$renderer.option({ value: "all" }, ($$renderer) => {
 					$$renderer.push(`Tất cả dãy`);
@@ -54,7 +54,7 @@ function _page($$renderer, $$props) {
 			});
 			$$renderer.push(`</div>`);
 		} else $$renderer.push("<!--[-1-->");
-		$$renderer.push(`<!--]--></div> <div class="flex gap-4 text-xs font-bold text-zinc-600 self-end md:self-auto select-none"><div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-white"></span> <span>Phòng trống</span></div> <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-green-200"></span> <span>Đã đóng đủ</span></div> <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-red-200"></span> <span>Chưa thanh toán</span></div></div></div> `);
+		$$renderer.push(`<!--]--></div> <div class="flex flex-wrap gap-4 text-xs font-bold text-zinc-600 mt-3 select-none"><div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-white"></span> <span>Phòng trống</span></div> <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-green-200"></span> <span>Đã đóng đủ</span></div> <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md border-2 border-black bg-red-200"></span> <span>Chưa thanh toán</span></div></div></div> `);
 		$$renderer.push("<!--[0-->");
 		$$renderer.push(`<div class="h-[40vh] w-full flex items-center justify-center">`);
 		Loader_circle($$renderer, { class: "h-10 w-10 text-black animate-spin" });

@@ -6,6 +6,7 @@ import "../../../../../chunks/circle-alert.js";
 import "../../../../../chunks/circle-check.js";
 import { t as Loader_circle } from "../../../../../chunks/loader-circle.js";
 import "../../../../../chunks/receipt.js";
+import "../../../../../chunks/zap.js";
 //#region node_modules/@lucide/svelte/dist/icons/arrow-left.svelte
 function Arrow_left($$renderer, $$props) {
 	let { $$slots, $$events, ...props } = $$props;

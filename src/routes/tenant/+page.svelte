@@ -474,9 +474,7 @@
   });
 </script>
 
-<div class="min-h-screen bg-slate-50 flex flex-col font-sans relative">
-  <!-- Interactive Grid Background Overlay -->
-  <div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,black_1px,transparent_0)] bg-[size:16px_16px]"></div>
+<div class="min-h-screen bg-white flex flex-col font-sans relative">
 
   <!-- Top header: Brutalist header with black border-b-2 -->
   <header class="bg-blue-300 text-black h-16 px-6 border-b-2 border-black flex items-center justify-between sticky top-0 z-40 shadow-sm shrink-0">
@@ -505,7 +503,7 @@
     </div>
   {:else}
     <!-- Shell Wrapper -->
-    <main class="flex-grow max-w-4xl w-full mx-auto p-4 space-y-6 pb-24 relative z-10">
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 space-y-5 pb-28 relative z-10">
       
       <!-- Welcome Header Profile Card - Styled as Brutallist Card -->
       <div class="bg-white border-2 border-black text-black p-6 rounded-lg shadow-secondary relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -556,45 +554,6 @@
         </div>
       {/if}
 
-      <!-- TAB SELECTION: Brutallist style tabs -->
-      <div class="flex border-b-2 border-black shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap bg-white border-2 border-black rounded-lg p-1 shadow-sm gap-1 select-none">
-        <button 
-          onclick={() => activeTab = 'home'}
-          class="flex-grow min-w-[80px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'home' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
-        >
-          Trang chủ
-        </button>
-        <button 
-          onclick={() => activeTab = 'bills'}
-          class="flex-grow min-w-[80px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'bills' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
-        >
-          Hóa đơn ({invoices.length})
-        </button>
-        <button 
-          onclick={() => activeTab = 'request'}
-          class="flex-grow min-w-[100px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'request' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
-        >
-          Báo sự cố ({requests.length})
-        </button>
-        <button 
-          onclick={() => activeTab = 'meters'}
-          class="flex-grow min-w-[120px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'meters' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
-        >
-          Báo điện nước
-        </button>
-        <button 
-          onclick={() => activeTab = 'documents'}
-          class="flex-grow min-w-[130px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'documents' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
-        >
-          Giấy tờ & Hợp đồng
-        </button>
-        <button 
-          onclick={() => activeTab = 'note'}
-          class="flex-grow min-w-[100px] py-2 text-xs font-black uppercase tracking-wider rounded-[6px] transition-all cursor-pointer {activeTab === 'note' ? 'bg-blue-300 text-black border-2 border-black' : 'text-zinc-600 hover:bg-white/50 border border-transparent'}"
-        >
-          Lời nhắn
-        </button>
-      </div>
 
       <!-- TAB CONTENTS -->
       <div class="space-y-4">
@@ -603,26 +562,21 @@
           <div class="space-y-4">
             <!-- Pending Bill Alert Box -->
             {#if pendingInvoice()}
-              <div class="bg-white border-2 border-black rounded-lg p-5 shadow-secondary flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex items-start gap-3.5">
-                  <div class="p-3 bg-white border-2 border-black text-black rounded-lg shadow-secondary shrink-0">
-                    <Receipt class="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 class="font-black text-black text-base">Hóa đơn cần đóng tháng này</h3>
-                    <p class="text-zinc-500 text-xs font-bold mt-1">Hạn nộp tiền: {new Date(pendingInvoice()!.dueDate).toLocaleDateString('vi-VN')}</p>
-                    <div class="flex items-baseline gap-2 mt-2">
-                      <span class="text-2xl font-black text-black">{formatCurrency(pendingInvoice()!.totalAmount)}</span>
-                      {#if pendingInvoice()!.paymentProofImage}
-                        <span class="text-xs font-bold text-amber-800 bg-amber-200 border border-black px-2 py-0.5 rounded-full">Đang chờ đối soát</span>
-                      {/if}
-                    </div>
+              <div class="bg-white border-2 border-black rounded-lg p-5 shadow-secondary flex flex-col gap-4">
+                <div>
+                  <h3 class="text-base font-black text-black flex items-center gap-1.5"><Receipt class="h-5 w-5 text-blue-500" /> Hóa đơn cần đóng tháng này</h3>
+                  <p class="text-zinc-500 text-xs font-bold mt-1">Hạn nộp: {new Date(pendingInvoice()!.dueDate).toLocaleDateString('vi-VN')}</p>
+                  <div class="flex items-baseline gap-2 mt-2">
+                    <span class="text-2xl font-black text-black">{formatCurrency(pendingInvoice()!.totalAmount)}</span>
+                    {#if pendingInvoice()!.paymentProofImage}
+                      <span class="text-[10px] font-black text-amber-800 bg-amber-200 border border-black px-2 py-0.5 rounded-full">Đang chờ đối soát</span>
+                    {/if}
                   </div>
                 </div>
 
                 <button
                   onclick={() => { payingInvoice = pendingInvoice()!; activeTab = 'bills'; }}
-                  class="bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-primary hover:translate-x-[5px] hover:translate-y-[6px] hover:shadow-none active:translate-x-[5px] active:translate-y-[6px] active:shadow-none px-5 py-3 text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  class="w-full bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none py-3 text-sm font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   Quét QR thanh toán <QrCode class="h-4.5 w-4.5" />
                 </button>
@@ -635,32 +589,18 @@
               </div>
             {/if}
 
-            <!-- General Help Grid info -->
-            <div class="grid gap-4 sm:grid-cols-2">
-              <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary flex flex-col justify-between h-44">
-                <div class="flex items-center gap-2 border-b-2 border-black pb-2">
-                  <Wrench class="h-5 w-5 text-black" />
-                  <span class="font-black text-black text-sm">Gửi báo cáo sự cố</span>
-                </div>
-                <p class="text-xs text-zinc-600 mt-2 font-semibold leading-relaxed">
-                  Thiết bị điện nước, nội thất trong phòng gặp sự cố? Gửi yêu cầu đính kèm hình ảnh và mô tả để chủ nhà bố trí thợ xử lý nhanh nhất.
-                </p>
-                <button onclick={() => activeTab = 'request'} class="text-xs font-black text-blue-500 hover:underline text-left mt-3 bg-transparent border-none p-0 cursor-pointer">
-                  Báo cáo ngay
-                </button>
+            <!-- General Help quick links -->
+            <div class="grid gap-3 grid-cols-2">
+              <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-col gap-2">
+                <span class="text-base font-black text-black flex items-center gap-1.5"><Wrench class="h-5 w-5 text-blue-500" /> Sự cố</span>
+                <p class="text-xs text-zinc-600 font-semibold leading-relaxed">Báo điện nước, nội thất hỏng để chủ nhà xử lý nhanh.</p>
+                <button onclick={() => activeTab = 'request'} class="text-xs font-black text-blue-500 hover:underline text-left bg-transparent border-none p-0 cursor-pointer">Báo ngay →</button>
               </div>
 
-              <div class="bg-white border-2 border-black p-5 rounded-lg shadow-secondary flex flex-col justify-between h-44">
-                <div class="flex items-center gap-2 border-b-2 border-black pb-2">
-                  <MessageSquare class="h-5 w-5 text-black" />
-                  <span class="font-black text-black text-sm">Gửi lời nhắn lưu ý</span>
-                </div>
-                <p class="text-xs text-zinc-600 mt-2 font-semibold leading-relaxed">
-                  Bạn có các đề xuất đặc biệt hoặc yêu cầu riêng cần chủ trọ lưu tâm? Gửi lời nhắn lưu ý để chủ nhà lưu giữ cố định tránh trôi tin nhắn.
-                </p>
-                <button onclick={() => activeTab = 'note'} class="text-xs font-black text-blue-500 hover:underline text-left mt-3 bg-transparent border-none p-0 cursor-pointer">
-                  Soạn lời nhắn
-                </button>
+              <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-col gap-2">
+                <span class="text-base font-black text-black flex items-center gap-1.5"><MessageSquare class="h-5 w-5 text-blue-500" /> Lời nhắn</span>
+                <p class="text-xs text-zinc-600 font-semibold leading-relaxed">Đề xuất hoặc yêu cầu riêng gửi tới chủ trọ lưu tâm.</p>
+                <button onclick={() => activeTab = 'note'} class="text-xs font-black text-blue-500 hover:underline text-left bg-transparent border-none p-0 cursor-pointer">Gửi →</button>
               </div>
             </div>
           </div>
@@ -680,59 +620,58 @@
                   </button>
                 </div>
 
-                <!-- VietQR image dynamically generated -->
-                <div class="flex flex-col md:flex-row gap-6 items-center">
-                  <div class="border-2 border-black rounded-lg p-3 bg-white shadow-secondary flex flex-col items-center">
+                <!-- VietQR image + bank info stacked for mobile -->
+                <div class="flex flex-col gap-4">
+                  <!-- QR code centered -->
+                  <div class="border-2 border-black rounded-lg p-3 bg-white shadow-secondary flex flex-col items-center mx-auto">
                     <img 
                       src={getVietQRUrl(payingInvoice)} 
                       alt="VietQR thanh toan" 
-                      class="w-56 h-56 object-contain"
+                      class="w-52 h-52 object-contain"
                     />
                     <p class="text-[10px] text-zinc-500 mt-2 font-black uppercase tracking-wider">Mở app ngân hàng quét mã</p>
                   </div>
 
-                  <!-- Bank Info and Proof Upload -->
-                  <div class="flex-1 space-y-3 w-full">
-                    <div class="text-xs space-y-2 border-b-2 border-black pb-3">
-                      <p class="text-zinc-500 font-black uppercase tracking-wider">Thông tin tài khoản nhận</p>
-                      <p class="font-black text-black text-sm">{payingInvoice.room.property.landlord.bankName} ({payingInvoice.room.property.landlord.bankCode})</p>
-                      <p class="font-black text-black">STK: {payingInvoice.room.property.landlord.accountNumber}</p>
-                      <p class="font-black text-black">Tên: {payingInvoice.room.property.landlord.accountName}</p>
-                      <p class="font-black text-indigo-600">Số tiền: {formatCurrency(payingInvoice.totalAmount)}</p>
-                      <p class="font-mono bg-white border-2 border-black px-2 py-1 rounded text-black font-black w-fit mt-1">
-                        Nội dung: ROOMIO {payingInvoice.roomNumber} T{payingInvoice.month.replace('-', '')}
-                      </p>
-                    </div>
-
-                    <!-- Upload payment proof image form -->
-                    <form onsubmit={handleSubmitProof} class="space-y-3 pt-2">
-                      <label for="proof-url" class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Dán đường dẫn ảnh chụp Bill chuyển khoản thành công</label>
-                      <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
-                          <Camera class="h-4 w-4" />
-                        </span>
-                        <input 
-                          id="proof-url"
-                          type="text" 
-                          bind:value={proofImageUrl}
-                          required
-                          placeholder="Ví dụ: https://image-storage/bill.jpg"
-                          class="w-full pl-9 pr-4 py-2 bg-white border-2 border-black rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs font-semibold"
-                        />
-                      </div>
-                      
-                      <button
-                        type="submit"
-                        disabled={isSubmittingProof}
-                        class="w-full py-2.5 bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black rounded-[6px] shadow-secondary hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all text-xs font-black cursor-pointer flex items-center justify-center gap-1"
-                      >
-                        Gửi hóa đơn chứng nhận đã chuyển khoản
-                        {#if isSubmittingProof}
-                          <Loader2 class="h-3.5 w-3.5 animate-spin" />
-                        {/if}
-                      </button>
-                    </form>
+                  <!-- Bank Info -->
+                  <div class="text-xs space-y-1.5 border-2 border-black rounded-lg p-3">
+                    <p class="text-zinc-500 font-black uppercase tracking-wider text-[10px]">Thông tin tài khoản nhận</p>
+                    <p class="font-black text-black">{payingInvoice.room.property.landlord.bankName} ({payingInvoice.room.property.landlord.bankCode})</p>
+                    <p class="font-semibold text-black">STK: <span class="font-black">{payingInvoice.room.property.landlord.accountNumber}</span></p>
+                    <p class="font-semibold text-black">Tên: <span class="font-black">{payingInvoice.room.property.landlord.accountName}</span></p>
+                    <p class="font-black text-indigo-600 text-sm">Số tiền: {formatCurrency(payingInvoice.totalAmount)}</p>
+                    <p class="font-mono bg-zinc-50 border-2 border-black px-2 py-1 rounded text-black font-black">
+                      Nội dung: ROOMIO {payingInvoice.roomNumber} T{payingInvoice.month.replace('-', '')}
+                    </p>
                   </div>
+
+                  <!-- Upload payment proof image form -->
+                  <form onsubmit={handleSubmitProof} class="space-y-3">
+                    <label for="proof-url" class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Dán link ảnh Bill chuyển khoản</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                        <Camera class="h-4 w-4" />
+                      </span>
+                      <input 
+                        id="proof-url"
+                        type="text" 
+                        bind:value={proofImageUrl}
+                        required
+                        placeholder="https://image-storage/bill.jpg"
+                        class="w-full border-2 border-black px-3 py-2.5 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300 pl-9"
+                      />
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={isSubmittingProof}
+                      class="w-full py-3 bg-blue-300 disabled:opacity-50 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all text-sm font-black cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      Gửi hóa đơn chứng nhận
+                      {#if isSubmittingProof}
+                        <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                      {/if}
+                    </button>
+                  </form>
                 </div>
               </div>
             {/if}
@@ -749,35 +688,45 @@
               {:else}
                 <div class="divide-y-2 divide-black bg-white">
                   {#each invoices as invoice}
-                    <div class="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div>
-                        <div class="flex items-center gap-2">
-                          <h4 class="font-black text-black text-sm">Hóa đơn tháng {invoice.month}</h4>
-                          <span class="text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase border border-black {invoice.status === 'paid' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">
-                            {invoice.status === 'paid' ? 'Đã đóng' : 'Chưa đóng'}
-                          </span>
+                    <!-- Compact invoice card -->
+                    <div class="p-4 flex flex-col gap-3">
+                      <!-- Top row: property + room, month, badge -->
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <p class="text-xs font-black text-zinc-500 uppercase tracking-wide">{invoice.room?.property?.name ?? roomDetails?.propertyName ?? ''} · Phòng {invoice.roomNumber}</p>
+                          <h4 class="font-black text-black text-sm mt-0.5">Tháng {invoice.month}</h4>
                         </div>
-                        <p class="text-[10px] text-zinc-500 font-bold mt-1">Hạn nộp: {new Date(invoice.dueDate).toLocaleDateString('vi-VN')}</p>
-                        
-                        <!-- Mini items list details -->
-                        <div class="mt-2 text-xs text-zinc-600 space-y-1 font-semibold">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-black border border-black shrink-0 {invoice.status === 'paid' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">
+                          {invoice.status === 'paid' ? 'Đã đóng' : 'Chưa đóng'}
+                        </span>
+                      </div>
+
+                      <!-- Amount -->
+                      <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-black text-black">{formatCurrency(invoice.totalAmount)}</span>
+                        <span class="text-[10px] text-zinc-400 font-bold">Hạn: {new Date(invoice.dueDate).toLocaleDateString('vi-VN')}</span>
+                      </div>
+
+                      <!-- Item breakdown (compact) -->
+                      {#if invoice.items.length > 0}
+                        <div class="text-xs text-zinc-500 font-semibold space-y-0.5">
                           {#each invoice.items as item}
                             <p>• {item.name}: {formatCurrency(item.amount)}</p>
                           {/each}
                         </div>
-                      </div>
+                      {/if}
 
-                      <div class="flex flex-col items-end gap-2 shrink-0">
-                        <span class="text-base font-black text-black">{formatCurrency(invoice.totalAmount)}</span>
-                        {#if invoice.status !== 'paid'}
-                          <button
-                            onclick={() => { payingInvoice = invoice; window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            class="px-3 py-1.5 bg-blue-300 hover:bg-blue-400 text-black border-2 border-black rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all text-xs font-black cursor-pointer"
-                          >
-                            Thanh toán
-                          </button>
-                        {/if}
-                      </div>
+                      <!-- Pay button: full-width if unpaid -->
+                      {#if invoice.status !== 'paid'}
+                        <button
+                          onclick={() => { payingInvoice = invoice; window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                          class="w-full py-2.5 bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all text-sm font-black cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <QrCode class="h-4 w-4" /> Thanh toán
+                        </button>
+                      {:else if invoice.paymentProofImage}
+                        <a href={invoice.paymentProofImage} target="_blank" rel="noreferrer" class="text-xs font-black text-blue-500 hover:underline">Xem bill chuyển khoản →</a>
+                      {/if}
                     </div>
                   {/each}
                 </div>
@@ -795,13 +744,13 @@
               </h3>
 
               <form onsubmit={handleSubmitRequest} class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-4">
                   <div class="space-y-1">
                     <label for="req-cat" class="text-xs font-bold text-zinc-600 uppercase tracking-wider block">Phân loại kỹ thuật</label>
                     <select 
                       id="req-cat"
                       bind:value={reqCategory}
-                      class="w-full border-2 border-black px-3 py-2 text-xs rounded-lg focus:outline-none bg-white font-semibold text-black"
+                      class="w-full border-2 border-black px-3 py-2.5 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white text-black"
                     >
                       <option value="maintenance">Nội thất/Gia dụng</option>
                       <option value="plumbing">Đường ống nước</option>
@@ -818,7 +767,7 @@
                       bind:value={reqTitle}
                       required
                       placeholder="Rò rỉ nước nhà tắm / Hỏng máy lạnh..." 
-                      class="w-full border-2 border-black px-3 py-2 text-xs rounded-lg focus:outline-none bg-white font-semibold text-black"
+                      class="w-full border-2 border-black px-3 py-2.5 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300"
                     />
                   </div>
                 </div>
@@ -831,37 +780,36 @@
                     required
                     rows="3"
                     placeholder="Mô tả cụ thể vấn đề giúp thợ sửa dễ hình dung (vị trí hỏng, hiện trạng)..." 
-                    class="w-full border-2 border-black p-3 text-xs rounded-lg focus:outline-none bg-white font-semibold text-black"
+                    class="w-full border-2 border-black px-3 py-2.5 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300"
                   ></textarea>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-1">
-                    <label for="req-img" class="text-xs font-bold text-zinc-600 uppercase tracking-wider block">Dán link ảnh chụp sự cố (Tùy chọn)</label>
-                    <input 
-                      id="req-img"
-                      type="text" 
-                      bind:value={reqImage}
-                      placeholder="Ví dụ: https://image-storage/broken.jpg" 
-                      class="w-full border-2 border-black px-3 py-2 text-xs rounded-lg focus:outline-none bg-white font-semibold text-black"
-                    />
-                  </div>
-                  <div class="flex items-center gap-2 text-xs pt-5 select-none font-bold">
-                    <input 
-                      id="req-imp"
-                      type="checkbox" 
-                      bind:checked={reqIsImportant}
-                      class="h-4.5 w-4.5 border-2 border-black text-black rounded focus:ring-blue-300 cursor-pointer"
-                    />
-                    <label for="req-imp" class="text-red-600 block cursor-pointer">Sự cố khẩn cấp (Cần xử lý gấp)</label>
-                  </div>
+                <div class="space-y-1">
+                  <label for="req-img" class="text-xs font-bold text-zinc-600 uppercase tracking-wider block">Dán link ảnh chụp sự cố (Tùy chọn)</label>
+                  <input 
+                    id="req-img"
+                    type="text" 
+                    bind:value={reqImage}
+                    placeholder="https://image-storage/broken.jpg" 
+                    class="w-full border-2 border-black px-3 py-2.5 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
                 </div>
 
-                <div class="flex justify-end pt-3 border-t-2 border-black">
+                <div class="flex items-center gap-2 select-none font-bold">
+                  <input 
+                    id="req-imp"
+                    type="checkbox" 
+                    bind:checked={reqIsImportant}
+                    class="h-5 w-5 border-2 border-black text-black rounded focus:ring-blue-300 cursor-pointer"
+                  />
+                  <label for="req-imp" class="text-red-600 text-sm cursor-pointer">Sự cố khẩn cấp (Cần xử lý gấp)</label>
+                </div>
+
+                <div class="pt-3 border-t-2 border-black">
                   <button
                     type="submit"
                     disabled={isSubmittingRequest}
-                    class="bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-secondary hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all px-5 py-2.5 text-xs font-black cursor-pointer flex items-center gap-1.5"
+                    class="w-full bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all py-3 text-sm font-black cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     Gửi yêu cầu sửa chữa
                     {#if isSubmittingRequest}
@@ -988,11 +936,11 @@
                     />
                   </div>
 
-                  <div class="flex justify-end pt-3 border-t-2 border-black">
+                  <div class="pt-3 border-t-2 border-black">
                     <button
                       type="submit"
                       disabled={isSubmittingMeter}
-                      class="bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-secondary hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all px-5 py-2.5 text-xs font-black cursor-pointer flex items-center gap-1.5"
+                      class="w-full bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all py-3 text-sm font-black cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       Gửi chỉ số
                       {#if isSubmittingMeter}
@@ -1167,11 +1115,11 @@
                   </div>
                 </div>
 
-                <div class="flex justify-end pt-3 border-t-2 border-black">
+                <div class="pt-3 border-t-2 border-black">
                   <button
                     type="submit"
                     disabled={isSubmittingDocs}
-                    class="bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-secondary hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all px-5 py-2.5 text-xs font-black cursor-pointer flex items-center gap-1.5"
+                    class="w-full bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all py-3 text-sm font-black cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     Lưu hồ sơ giấy tờ
                     {#if isSubmittingDocs}
@@ -1203,11 +1151,11 @@
                   class="w-full border-2 border-black p-3 text-xs rounded-lg focus:outline-none bg-white font-semibold text-black"
                 ></textarea>
 
-                <div class="flex justify-end pt-3 border-t-2 border-black">
+                <div class="pt-3 border-t-2 border-black">
                   <button
                     type="submit"
                     disabled={isSubmittingNote}
-                    class="bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-secondary hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all px-5 py-2.5 text-xs font-black cursor-pointer flex items-center gap-1.5"
+                    class="w-full bg-blue-300 text-black border-2 border-black rounded-[6px] shadow-[4px_4px_0_#000] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all py-3 text-sm font-black cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     Gửi lời nhắn
                     {#if isSubmittingNote}
@@ -1247,6 +1195,55 @@
       </div>
 
     </main>
+
+    <!-- Bottom Tab Navigation (mobile-first) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-black z-50 flex items-stretch">
+      <button
+        onclick={() => activeTab = 'home'}
+        class="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors {activeTab === 'home' ? 'text-blue-500' : 'text-zinc-400'}"
+      >
+        <Home class="h-5 w-5" />
+        Trang chủ
+      </button>
+      <button
+        onclick={() => activeTab = 'bills'}
+        class="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors relative {activeTab === 'bills' ? 'text-blue-500' : 'text-zinc-400'}"
+      >
+        <Receipt class="h-5 w-5" />
+        Hóa đơn
+        {#if invoices.filter(i => i.status !== 'paid').length > 0}
+          <span class="absolute top-1.5 right-3 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+        {/if}
+      </button>
+      <button
+        onclick={() => activeTab = 'request'}
+        class="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors {activeTab === 'request' ? 'text-blue-500' : 'text-zinc-400'}"
+      >
+        <Wrench class="h-5 w-5" />
+        Sự cố
+      </button>
+      <button
+        onclick={() => activeTab = 'meters'}
+        class="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors {activeTab === 'meters' ? 'text-blue-500' : 'text-zinc-400'}"
+      >
+        <Zap class="h-5 w-5" />
+        Điện nước
+      </button>
+      <button
+        onclick={() => activeTab = 'documents'}
+        class="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors {activeTab === 'documents' ? 'text-blue-500' : 'text-zinc-400'}"
+      >
+        <Calendar class="h-5 w-5" />
+        Giấy tờ
+      </button>
+      <button
+        onclick={() => activeTab = 'note'}
+        class="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors {activeTab === 'note' ? 'text-blue-500' : 'text-zinc-400'}"
+      >
+        <MessageSquare class="h-5 w-5" />
+        Lời nhắn
+      </button>
+    </nav>
   {/if}
 </div>
 

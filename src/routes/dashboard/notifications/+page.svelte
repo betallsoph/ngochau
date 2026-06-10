@@ -195,14 +195,14 @@
 
 <div class="space-y-6">
   <!-- Header -->
-  <div class="flex items-center justify-between">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-black text-black">Thông Báo & Lời Nhắn</h1>
+      <h1 class="text-xl sm:text-2xl font-black text-black">Thông Báo & Lời Nhắn</h1>
       <p class="text-zinc-650 text-sm mt-1 font-bold">Đăng thông báo ghim cho cư dân và theo dõi các lời nhắn đặc biệt</p>
     </div>
     <button 
       onclick={() => isAddDialogOpen = true}
-      class="bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-black text-sm"
+      class="bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-black text-sm w-full sm:w-auto justify-center"
     >
       Đăng thông báo <Plus class="h-4.5 w-4.5" />
     </button>
@@ -223,7 +223,6 @@
         </div>
       {:else if notes.length === 0}
         <div class="flex-grow p-8 flex flex-col items-center justify-center text-center bg-white">
-          <CheckCircle2 class="h-12 w-12 text-green-500 mb-2" />
           <p class="font-black text-black text-base">Hộp thư lời nhắn trống</p>
           <p class="text-zinc-500 text-xs font-semibold mt-1">Chưa có lời nhắn hoặc yêu cầu đề nghị riêng nào được gửi.</p>
         </div>
@@ -231,27 +230,33 @@
         <div class="divide-y-2 divide-black overflow-y-auto flex-grow bg-white">
           {#each notes as note}
             {@const roomNum = note.tenant.rooms[0]?.roomNumber || '--'}
-            <div class="p-4 hover:bg-slate-50 transition-all flex flex-col gap-3 font-semibold text-black relative">
-              <div class="flex items-start justify-between">
-                <div>
-                  <h4 class="font-black text-black text-sm">
+            <div class="p-4 hover:bg-slate-50 transition-all font-semibold text-black">
+              <!-- Mobile card layout -->
+              <div class="flex justify-between items-start gap-2">
+                <div class="min-w-0">
+                  <h4 class="font-black text-black text-sm truncate">
                     Phòng {roomNum} - {note.tenant.user.name}
                   </h4>
-                  <p class="text-[10px] text-zinc-500 font-bold mt-0.5 uppercase">SĐT: {note.tenant.user.phone} • {new Date(note.createdAt).toLocaleString('vi-VN')}</p>
+                  <p class="text-[10px] text-zinc-500 font-bold mt-0.5 uppercase">SĐT: {note.tenant.user.phone}</p>
                 </div>
                 
-                {#if !note.isRead}
-                  <button
-                    onclick={() => markNoteAsRead(note.id)}
-                    class="px-2.5 py-1 bg-blue-300 hover:bg-blue-400 text-black border-2 border-black rounded-[6px] text-[10px] font-black uppercase shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
-                  >
-                    Đọc xong
-                  </button>
-                {:else}
-                  <span class="text-[10px] text-zinc-500 font-bold uppercase">Đã xem</span>
-                {/if}
+                <span class="shrink-0">
+                  {#if !note.isRead}
+                    <button
+                      onclick={() => markNoteAsRead(note.id)}
+                      class="px-2.5 py-1 bg-blue-300 hover:bg-blue-400 text-black border-2 border-black rounded-[6px] text-[10px] font-black uppercase shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
+                    >
+                      Đọc xong
+                    </button>
+                  {:else}
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase">Đã xem</span>
+                  {/if}
+                </span>
               </div>
-              <p class="text-black text-xs leading-relaxed bg-white/30 p-2.5 rounded-lg border-2 border-black shadow-secondary font-semibold">
+              <div class="flex items-center justify-between mt-1">
+                <p class="text-[10px] text-zinc-500 font-bold uppercase">{new Date(note.createdAt).toLocaleString('vi-VN')}</p>
+              </div>
+              <p class="text-black text-xs leading-relaxed bg-white/30 p-2.5 rounded-lg border-2 border-black shadow-secondary font-semibold mt-2">
                 {note.content}
               </p>
             </div>
@@ -274,34 +279,37 @@
         </div>
       {:else if announcements.length === 0}
         <div class="flex-grow p-8 flex flex-col items-center justify-center text-center bg-white">
-                      <AlertCircle class="h-7 w-7" />
-          <p class="font-black text-black text-base">Bảng tin đang trống</p>
+          <AlertCircle class="h-7 w-7 text-blue-500" />
+          <p class="font-black text-black text-base mt-2">Bảng tin đang trống</p>
           <p class="text-zinc-500 text-xs font-semibold mt-1">Đăng thông báo ghim để cư dân trong nhà trọ cập nhật tin tức.</p>
         </div>
       {:else}
         <div class="divide-y-2 divide-black overflow-y-auto flex-grow bg-white">
           {#each announcements as ann}
-            <div class="p-4 hover:bg-slate-50 transition-all flex flex-col gap-2 font-semibold">
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex items-center gap-2 min-w-0">
+            <div class="p-4 hover:bg-slate-50 transition-all font-semibold">
+              <!-- Mobile card layout -->
+              <div class="flex justify-between items-start gap-2">
+                <div class="min-w-0 flex items-center gap-2">
                   <Pin class="h-4 w-4 shrink-0 {ann.isImportant ? 'text-red-500 fill-red-500' : 'text-zinc-400'}" />
                   <h4 class="font-black text-black text-sm truncate">{ann.title}</h4>
                 </div>
-                <button
-                  onclick={() => handleDeleteAnnouncement(ann.id)}
-                  class="text-red-650 hover:bg-red-555 p-1 rounded-lg border-2 border-transparent hover:border-black transition-colors cursor-pointer"
-                >
-                  <Trash2 class="h-4 w-4" />
-                </button>
+                <span class="shrink-0">
+                  <button
+                    onclick={() => handleDeleteAnnouncement(ann.id)}
+                    class="text-red-650 hover:bg-red-555 p-1 rounded-lg border-2 border-transparent hover:border-black transition-colors cursor-pointer"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </button>
+                </span>
               </div>
-              <p class="text-zinc-700 text-xs leading-relaxed font-semibold">{ann.content}</p>
-              <div class="flex justify-between items-center text-[9px] text-zinc-500 font-bold uppercase mt-2 border-t border-black/10 pt-2">
-                <span>Gửi tới: {ann.targetType === 'ALL' ? 'Tất cả' : 'Theo tòa nhà'}</span>
-                <span class="flex items-center gap-1">
+              <div class="flex items-center justify-between mt-1">
+                <p class="text-[9px] text-zinc-500 font-bold uppercase">Gửi tới: {ann.targetType === 'ALL' ? 'Tất cả' : 'Theo tòa nhà'}</p>
+                <span class="flex items-center gap-1 text-[9px] text-zinc-500 font-bold uppercase">
                   <Calendar class="h-3 w-3" />
                   {new Date(ann.createdAt).toLocaleDateString('vi-VN')}
                 </span>
               </div>
+              <p class="text-zinc-700 text-xs leading-relaxed font-semibold mt-2">{ann.content}</p>
             </div>
           {/each}
         </div>
@@ -366,7 +374,7 @@
           </div>
 
           <!-- Target & priority selectors -->
-          <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div class="space-y-1">
               <label for="ann-target" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Đối tượng nhận tin</label>
               <select 
@@ -407,18 +415,18 @@
             <label for="ann-imp" class="font-bold text-zinc-700 select-none cursor-pointer">Đánh dấu quan trọng (Ghim lên đầu)</label>
           </div>
 
-          <div class="flex justify-end gap-3 pt-3 border-t-2 border-black">
+          <div class="flex flex-col sm:flex-row justify-end gap-3 pt-3 border-t-2 border-black">
             <button 
               type="button" 
               onclick={() => isAddDialogOpen = false}
-              class="border-2 border-black bg-white hover:bg-zinc-150 text-black px-4 py-2 rounded-[6px] text-xs font-bold transition-all cursor-pointer"
+              class="border-2 border-black bg-white hover:bg-zinc-150 text-black px-4 py-2 rounded-[6px] text-xs font-bold transition-all cursor-pointer w-full sm:w-auto justify-center"
             >
               Hủy
             </button>
             <button 
               type="submit"
               disabled={isSubmitting}
-              class="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black px-4 py-2 rounded-[6px] text-xs font-black shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+              class="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black px-4 py-2 rounded-[6px] text-xs font-black shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer w-full sm:w-auto justify-center"
             >
               Đăng bản tin
               {#if isSubmitting}

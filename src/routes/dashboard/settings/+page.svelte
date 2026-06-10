@@ -108,9 +108,11 @@
 
 <div class="space-y-6 max-w-4xl">
   <!-- Header -->
-  <div>
-    <h1 class="text-2xl font-black text-black">Cấu Hình Tài Khoản</h1>
-    <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý thương hiệu dịch vụ và tài khoản nhận thanh toán VietQR động</p>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-black text-black">Cấu Hình Tài Khoản</h1>
+      <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý thương hiệu dịch vụ và tài khoản nhận thanh toán VietQR động</p>
+    </div>
   </div>
 
   {#if isLoading}
@@ -121,7 +123,7 @@
     <form onsubmit={handleSaveSettings} class="space-y-6">
       
       <!-- Section 1: User Profile -->
-      <div class="bg-white border-2 border-black p-6 rounded-lg shadow-secondary space-y-4 text-black">
+      <div class="bg-white border-2 border-black p-4 sm:p-6 rounded-lg shadow-secondary space-y-4 text-black">
         <h2 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2 select-none">
           1. Thông tin cá nhân (Chỉ xem) <User class="h-5 w-5" />
         </h2>
@@ -158,7 +160,7 @@
       </div>
 
       <!-- Section 2: Brand & Bank QR Settings -->
-      <div class="bg-white border-2 border-black p-6 rounded-lg shadow-secondary space-y-4 text-black">
+      <div class="bg-white border-2 border-black p-4 sm:p-6 rounded-lg shadow-secondary space-y-4 text-black">
         <h2 class="font-black text-black text-base flex items-center gap-2 border-b-2 border-black pb-2 select-none">
           2. Thương hiệu & VietQR nhận tiền chuyển khoản <Landmark class="h-5 w-5" />
         </h2>
@@ -249,7 +251,7 @@
         <button
           type="submit"
           disabled={isSubmitting}
-          class="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black px-6 py-3 rounded-[6px] text-sm font-black shadow-primary hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+          class="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black px-6 py-3 rounded-[6px] text-sm font-black shadow-primary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer w-full sm:w-auto justify-center"
         >
           Lưu cấu hình tài khoản
           {#if isSubmitting}

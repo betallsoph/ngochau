@@ -3,6 +3,7 @@ import "../../../chunks/dist.js";
 import "../../../chunks/client.js";
 import "../../../chunks/navigation.js";
 import "../../../chunks/Icon.js";
+import "../../../chunks/calendar.js";
 import "../../../chunks/circle-check.js";
 import { t as House } from "../../../chunks/house.js";
 import { t as Loader_circle } from "../../../chunks/loader-circle.js";
@@ -10,6 +11,7 @@ import { t as Log_out } from "../../../chunks/log-out.js";
 import "../../../chunks/pin.js";
 import "../../../chunks/receipt.js";
 import "../../../chunks/wrench.js";
+import "../../../chunks/zap.js";
 //#endregion
 //#region src/routes/tenant/+page.svelte
 function _page($$renderer, $$props) {
@@ -19,7 +21,7 @@ function _page($$renderer, $$props) {
 		derived(() => () => {
 			return invoices.find((inv) => inv.status !== "paid");
 		});
-		$$renderer.push(`<div class="min-h-screen bg-slate-50 flex flex-col font-sans relative"><div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,black_1px,transparent_0)] bg-[size:16px_16px]"></div> <header class="bg-blue-300 text-black h-16 px-6 border-b-2 border-black flex items-center justify-between sticky top-0 z-40 shadow-sm shrink-0"><div class="flex items-center gap-2"><div class="bg-white border-2 border-black p-1.5 rounded-lg shadow-secondary">`);
+		$$renderer.push(`<div class="min-h-screen bg-white flex flex-col font-sans relative"><header class="bg-blue-300 text-black h-16 px-6 border-b-2 border-black flex items-center justify-between sticky top-0 z-40 shadow-sm shrink-0"><div class="flex items-center gap-2"><div class="bg-white border-2 border-black p-1.5 rounded-lg shadow-secondary">`);
 		House($$renderer, { class: "h-5 w-5 text-black" });
 		$$renderer.push(`<!----></div> <span class="font-black text-lg">Roomio Cư Dân</span></div> <button class="flex items-center gap-1.5 bg-white border-2 border-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all px-3 py-1.5 rounded-[6px] shadow-secondary text-xs font-bold cursor-pointer">Đăng xuất `);
 		Log_out($$renderer, { class: "h-4 w-4" });

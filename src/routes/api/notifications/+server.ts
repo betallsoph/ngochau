@@ -1,90 +1,92 @@
 import { json } from '@sveltejs/kit';
+import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/server/db';
+import { specialNotes, rooms, properties } from '$lib/server/db/schema';
+import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
-  try {
-    const landlordId = url.searchParams.get('landlordId');
-    const tenantId = url.searchParams.get('tenantId');
+	try {
+		const landlordId = url.searchParams.get('landlordId');
+		const tenantId = url.searchParams.get('tenantId');
 
-    const filter: any = {};
+		const conditions = [];
 
-    if (landlordId) {
-      filter.tenant = {
-        rooms: {
-          some: {
-            property: { landlordId }
-          }
-        }
-      };
-    } else if (tenantId) {
-      filter.tenantId = tenantId;
-    }
+		if (landlordId) {
+			conditions.push(
+				inArray(
+					specialNotes.tenantId,
+					db
+						.select({ id: rooms.tenantId })
+						.from(rooms)
+						.innerJoin(properties, eq(rooms.propertyId, properties.id))
+						.where(and(eq(properties.landlordId, landlordId), isNotNull(rooms.tenantId)))
+				)
+			);
+		} else if (tenantId) {
+			conditions.push(eq(specialNotes.tenantId, tenantId));
+		}
 
-    const notes = await db.specialNote.findMany({
-      where: filter,
-      include: {
-        tenant: {
-          include: {
-            user: {
-              select: { name: true, phone: true }
-            },
-            rooms: {
-              select: { roomNumber: true }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+		const notes = await db.query.specialNotes.findMany({
+			where: conditions.length > 0 ? and(...conditions) : undefined,
+			with: {
+				tenant: {
+					with: {
+						user: {
+							columns: { name: true, phone: true }
+						},
+						rooms: {
+							columns: { roomNumber: true }
+						}
+					}
+				}
+			},
+			orderBy: desc(specialNotes.createdAt)
+		});
 
-    return json(notes);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(notes);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { tenantId, content } = body;
+	try {
+		const body = await request.json();
+		const { tenantId, content } = body;
 
-    if (!tenantId || !content) {
-      return json({ error: 'Missing tenant ID or content' }, { status: 400 });
-    }
+		if (!tenantId || !content) {
+			return json({ error: 'Missing tenant ID or content' }, { status: 400 });
+		}
 
-    const note = await db.specialNote.create({
-      data: {
-        tenantId,
-        content,
-        isRead: false
-      }
-    });
+		const created = await db
+			.insert(specialNotes)
+			.values({ tenantId, content, isRead: false })
+			.returning();
 
-    return json(note);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(created[0]);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const PUT: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { id, isRead } = body;
+	try {
+		const body = await request.json();
+		const { id, isRead } = body;
 
-    if (!id) {
-      return json({ error: 'Missing notification/note ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing notification/note ID' }, { status: 400 });
+		}
 
-    const updated = await db.specialNote.update({
-      where: { id },
-      data: {
-        isRead: isRead !== undefined ? isRead : true
-      }
-    });
+		const updated = await db
+			.update(specialNotes)
+			.set({ isRead: isRead !== undefined ? isRead : true })
+			.where(eq(specialNotes.id, id))
+			.returning();
 
-    return json(updated);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(updated[0]);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };

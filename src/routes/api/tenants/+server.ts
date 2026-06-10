@@ -1,216 +1,240 @@
 import { json } from '@sveltejs/kit';
+import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/server/db';
+import {
+	users,
+	tenantProfiles,
+	rooms,
+	properties,
+	services,
+	meterReadings
+} from '$lib/server/db/schema';
+import { and, eq, inArray, isNotNull, like, or } from 'drizzle-orm';
 import crypto from 'crypto';
 
 function hashPassword(password: string) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+	return crypto.createHash('sha256').update(password).digest('hex');
 }
 
 export const GET: RequestHandler = async ({ url }) => {
-  try {
-    const landlordId = url.searchParams.get('landlordId');
+	try {
+		const landlordId = url.searchParams.get('landlordId');
 
-    if (!landlordId) {
-      return json({ error: 'Missing landlord ID' }, { status: 400 });
-    }
+		if (!landlordId) {
+			return json({ error: 'Missing landlord ID' }, { status: 400 });
+		}
 
-    const tenants = await db.tenantProfile.findMany({
-      where: {
-        rooms: {
-          some: {
-            property: { landlordId }
-          }
-        }
-      },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, phone: true }
-        },
-        rooms: {
-          include: {
-            property: true,
-            block: true
-          }
-        }
-      },
-      orderBy: {
-        user: { name: 'asc' }
-      }
-    });
+		// Tenants that currently occupy a room in one of the landlord's properties
+		const tenantIdsSubquery = db
+			.select({ id: rooms.tenantId })
+			.from(rooms)
+			.innerJoin(properties, eq(rooms.propertyId, properties.id))
+			.where(and(eq(properties.landlordId, landlordId), isNotNull(rooms.tenantId)));
 
-    return json(tenants);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		const tenants = await db.query.tenantProfiles.findMany({
+			where: inArray(tenantProfiles.id, tenantIdsSubquery),
+			with: {
+				user: {
+					columns: { id: true, name: true, email: true, phone: true }
+				},
+				rooms: {
+					with: {
+						property: true,
+						block: true
+					}
+				}
+			}
+		});
+
+		tenants.sort((a, b) => a.user.name.localeCompare(b.user.name, 'vi'));
+
+		return json(tenants);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const {
-      email,
-      phone,
-      password,
-      name,
-      roomId,
-      idNumber,
-      moveInDate,
-      deposit,
-      notes,
-      initialElectricity,
-      initialWater
-    } = body;
+	try {
+		const body = await request.json();
+		const {
+			email,
+			phone,
+			password,
+			name,
+			roomId,
+			idNumber,
+			moveInDate,
+			deposit,
+			notes,
+			initialElectricity,
+			initialWater
+		} = body;
 
-    if (!email || !phone || !password || !name || !roomId || !idNumber || !moveInDate || deposit === undefined) {
-      return json({ error: 'Thiếu thông tin khách thuê bắt buộc' }, { status: 400 });
-    }
+		if (
+			!email ||
+			!phone ||
+			!password ||
+			!name ||
+			!roomId ||
+			!idNumber ||
+			!moveInDate ||
+			deposit === undefined
+		) {
+			return json({ error: 'Thiếu thông tin khách thuê bắt buộc' }, { status: 400 });
+		}
 
-    // 1. Check if user already exists
-    let user = await db.user.findFirst({
-      where: {
-        OR: [{ email }, { phone }]
-      }
-    });
+		// 1. Check if user already exists
+		const existingUser = await db.query.users.findFirst({
+			where: or(eq(users.email, email), eq(users.phone, phone))
+		});
 
-    const tenant = await db.$transaction(async (tx) => {
-      if (!user) {
-        user = await tx.user.create({
-          data: {
-            email,
-            phone,
-            passwordHash: hashPassword(password),
-            name,
-            role: 'TENANT'
-          }
-        });
-      }
+		const tenant = db.transaction((tx) => {
+			const user =
+				existingUser ??
+				tx
+					.insert(users)
+					.values({ email, phone, passwordHash: hashPassword(password), name, role: 'TENANT' })
+					.returning()
+					.get();
 
-      // 2. Check if TenantProfile exists
-      let tenantProfile = await tx.tenantProfile.findUnique({
-        where: { userId: user.id }
-      });
+			// 2. Check if TenantProfile exists
+			let tenantProfile = tx
+				.select()
+				.from(tenantProfiles)
+				.where(eq(tenantProfiles.userId, user.id))
+				.get();
 
-      if (!tenantProfile) {
-        tenantProfile = await tx.tenantProfile.create({
-          data: {
-            userId: user.id,
-            idNumber,
-            moveInDate,
-            deposit: Number(deposit),
-            notes
-          }
-        });
-      } else {
-        // Update details if profile already exists
-        tenantProfile = await tx.tenantProfile.update({
-          where: { id: tenantProfile.id },
-          data: {
-            idNumber,
-            moveInDate,
-            deposit: Number(deposit),
-            notes
-          }
-        });
-      }
+			if (!tenantProfile) {
+				tenantProfile = tx
+					.insert(tenantProfiles)
+					.values({ userId: user.id, idNumber, moveInDate, deposit: Number(deposit), notes })
+					.returning()
+					.get();
+			} else {
+				// Update details if profile already exists
+				tenantProfile = tx
+					.update(tenantProfiles)
+					.set({ idNumber, moveInDate, deposit: Number(deposit), notes })
+					.where(eq(tenantProfiles.id, tenantProfile.id))
+					.returning()
+					.get();
+			}
 
-      // 3. Link room to tenant
-      const room = await tx.room.update({
-        where: { id: roomId },
-        data: {
-          tenantId: tenantProfile.id,
-          status: 'paid', // Mark as active/paid initially
-          debtAmount: 0
-        },
-        include: {
-          property: true
-        }
-      });
+			// 3. Link room to tenant
+			const room = tx
+				.update(rooms)
+				.set({
+					tenantId: tenantProfile.id,
+					status: 'paid', // Mark as active/paid initially
+					debtAmount: 0
+				})
+				.where(eq(rooms.id, roomId))
+				.returning()
+				.get();
 
-      // 4. Record initial meters
-      const checkInMonth = moveInDate.slice(0, 7); // "YYYY-MM"
-      
-      // Find electricity & water services for the landlord
-      const electricityService = await tx.service.findFirst({
-        where: { landlordId: room.property.landlordId, name: { contains: 'Điện' } }
-      });
-      const waterService = await tx.service.findFirst({
-        where: { landlordId: room.property.landlordId, name: { contains: 'Nước' } }
-      });
+			const property = tx
+				.select({ landlordId: properties.landlordId })
+				.from(properties)
+				.where(eq(properties.id, room.propertyId))
+				.get();
 
-      if (electricityService && initialElectricity !== undefined) {
-        await tx.meterReading.create({
-          data: {
-            roomId: room.id,
-            serviceId: electricityService.id,
-            month: checkInMonth,
-            prevValue: Number(initialElectricity),
-            currValue: Number(initialElectricity),
-            recordedAt: new Date().toISOString().split('T')[0]
-          }
-        });
-      }
+			// 4. Record initial meters
+			const checkInMonth = moveInDate.slice(0, 7); // "YYYY-MM"
+			const today = new Date().toISOString().split('T')[0];
 
-      if (waterService && initialWater !== undefined) {
-        await tx.meterReading.create({
-          data: {
-            roomId: room.id,
-            serviceId: waterService.id,
-            month: checkInMonth,
-            prevValue: Number(initialWater),
-            currValue: Number(initialWater),
-            recordedAt: new Date().toISOString().split('T')[0]
-          }
-        });
-      }
+			if (property) {
+				// Find electricity & water services for the landlord
+				const electricityService = tx
+					.select()
+					.from(services)
+					.where(and(eq(services.landlordId, property.landlordId), like(services.name, '%Điện%')))
+					.get();
+				const waterService = tx
+					.select()
+					.from(services)
+					.where(and(eq(services.landlordId, property.landlordId), like(services.name, '%Nước%')))
+					.get();
 
-      return tenantProfile;
-    });
+				if (electricityService && initialElectricity !== undefined) {
+					tx.insert(meterReadings)
+						.values({
+							roomId: room.id,
+							serviceId: electricityService.id,
+							month: checkInMonth,
+							prevValue: Number(initialElectricity),
+							currValue: Number(initialElectricity),
+							recordedAt: today
+						})
+						.run();
+				}
 
-    const fullTenant = await db.tenantProfile.findUnique({
-      where: { id: tenant.id },
-      include: {
-        user: true,
-        rooms: {
-          include: { property: true }
-        }
-      }
-    });
+				if (waterService && initialWater !== undefined) {
+					tx.insert(meterReadings)
+						.values({
+							roomId: room.id,
+							serviceId: waterService.id,
+							month: checkInMonth,
+							prevValue: Number(initialWater),
+							currValue: Number(initialWater),
+							recordedAt: today
+						})
+						.run();
+				}
+			}
 
-    return json(fullTenant);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+			return tenantProfile;
+		});
+
+		const fullTenant = await db.query.tenantProfiles.findFirst({
+			where: eq(tenantProfiles.id, tenant.id),
+			with: {
+				user: true,
+				rooms: {
+					with: { property: true }
+				}
+			}
+		});
+
+		return json(fullTenant);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const PUT: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { id, idNumber, idFrontImage, idBackImage, vehicleImage, checkInImage } = body;
+	try {
+		const body = await request.json();
+		const { id, idNumber, idFrontImage, idBackImage, vehicleImage, checkInImage } = body;
 
-    if (!id) {
-      return json({ error: 'Missing tenant profile ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing tenant profile ID' }, { status: 400 });
+		}
 
-    const updated = await db.tenantProfile.update({
-      where: { id },
-      data: {
-        idNumber: idNumber !== undefined ? idNumber : undefined,
-        idFrontImage: idFrontImage !== undefined ? idFrontImage : undefined,
-        idBackImage: idBackImage !== undefined ? idBackImage : undefined,
-        vehicleImage: vehicleImage !== undefined ? vehicleImage : undefined,
-        checkInImage: checkInImage !== undefined ? checkInImage : undefined
-      },
-      include: {
-        user: true,
-        rooms: {
-          include: { property: true }
-        }
-      }
-    });
+		const updateData: Record<string, unknown> = {};
+		if (idNumber !== undefined) updateData.idNumber = idNumber;
+		if (idFrontImage !== undefined) updateData.idFrontImage = idFrontImage;
+		if (idBackImage !== undefined) updateData.idBackImage = idBackImage;
+		if (vehicleImage !== undefined) updateData.vehicleImage = vehicleImage;
+		if (checkInImage !== undefined) updateData.checkInImage = checkInImage;
 
-    return json(updated);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		if (Object.keys(updateData).length > 0) {
+			await db.update(tenantProfiles).set(updateData).where(eq(tenantProfiles.id, id));
+		}
+
+		const updated = await db.query.tenantProfiles.findFirst({
+			where: eq(tenantProfiles.id, id),
+			with: {
+				user: true,
+				rooms: {
+					with: { property: true }
+				}
+			}
+		});
+
+		return json(updated);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };

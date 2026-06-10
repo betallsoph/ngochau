@@ -1,164 +1,173 @@
 import { json } from '@sveltejs/kit';
+import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/server/db';
+import { invoices, rooms } from '$lib/server/db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ params }) => {
-  try {
-    const { id } = params;
+	try {
+		const { id } = params;
 
-    if (!id) {
-      return json({ error: 'Missing invoice ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing invoice ID' }, { status: 400 });
+		}
 
-    const invoice = await db.invoice.findUnique({
-      where: { id },
-      include: {
-        items: true,
-        room: {
-          include: {
-            property: {
-              include: {
-                landlord: true
-              }
-            }
-          }
-        }
-      }
-    });
+		const invoice = await db.query.invoices.findFirst({
+			where: eq(invoices.id, id),
+			with: {
+				items: true,
+				room: {
+					with: {
+						property: {
+							with: {
+								landlord: true
+							}
+						}
+					}
+				}
+			}
+		});
 
-    if (!invoice) {
-      return json({ error: 'Invoice not found' }, { status: 404 });
-    }
+		if (!invoice) {
+			return json({ error: 'Invoice not found' }, { status: 404 });
+		}
 
-    return json(invoice);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(invoice);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const PUT: RequestHandler = async ({ params, request }) => {
-  try {
-    const { id } = params;
-    const body = await request.json();
-    const { action, paymentProofImage, paidAmount } = body;
+	try {
+		const { id } = params;
+		const body = await request.json();
+		const { action, paymentProofImage, paidAmount } = body;
 
-    if (!id) {
-      return json({ error: 'Missing invoice ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing invoice ID' }, { status: 400 });
+		}
 
-    const invoice = await db.invoice.findUnique({
-      where: { id },
-      include: { room: true }
-    });
+		const invoice = await db.query.invoices.findFirst({
+			where: eq(invoices.id, id),
+			with: { room: true }
+		});
 
-    if (!invoice) {
-      return json({ error: 'Invoice not found' }, { status: 404 });
-    }
+		if (!invoice) {
+			return json({ error: 'Invoice not found' }, { status: 404 });
+		}
 
-    if (action === 'confirmPaid') {
-      const alreadyPaid = invoice.status === 'paid';
-      if (alreadyPaid) {
-        return json({ error: 'Invoice is already paid' }, { status: 400 });
-      }
+		if (action === 'confirmPaid') {
+			const alreadyPaid = invoice.status === 'paid';
+			if (alreadyPaid) {
+				return json({ error: 'Invoice is already paid' }, { status: 400 });
+			}
 
-      const updated = await db.$transaction(async (tx) => {
-        // 1. Update invoice status
-        const inv = await tx.invoice.update({
-          where: { id },
-          data: {
-            status: 'paid',
-            paidAmount: invoice.totalAmount,
-            paidDate: new Date().toISOString().split('T')[0]
-          }
-        });
+			const updated = db.transaction((tx) => {
+				// 1. Update invoice status
+				const inv = tx
+					.update(invoices)
+					.set({
+						status: 'paid',
+						paidAmount: invoice.totalAmount,
+						paidDate: new Date().toISOString().split('T')[0]
+					})
+					.where(eq(invoices.id, id))
+					.returning()
+					.get();
 
-        // 2. Reduce the room's outstanding debt
-        const outstandingAmount = invoice.totalAmount - invoice.paidAmount;
-        await tx.room.update({
-          where: { id: invoice.roomId },
-          data: {
-            status: 'paid', // Mark as paid/clean
-            debtAmount: { decrement: outstandingAmount >= 0 ? outstandingAmount : 0 }
-          }
-        });
+				// 2. Reduce the room's outstanding debt
+				const outstandingAmount = Math.max(invoice.totalAmount - invoice.paidAmount, 0);
+				tx.update(rooms)
+					.set({
+						status: 'paid', // Mark as paid/clean
+						debtAmount: sql`coalesce(${rooms.debtAmount}, 0) - ${outstandingAmount}`
+					})
+					.where(eq(rooms.id, invoice.roomId))
+					.run();
 
-        return inv;
-      });
+				return inv;
+			});
 
-      return json(updated);
-    } else if (action === 'uploadProof') {
-      if (!paymentProofImage) {
-        return json({ error: 'Missing payment proof image url' }, { status: 400 });
-      }
+			return json(updated);
+		} else if (action === 'uploadProof') {
+			if (!paymentProofImage) {
+				return json({ error: 'Missing payment proof image url' }, { status: 400 });
+			}
 
-      const updated = await db.invoice.update({
-        where: { id },
-        data: {
-          paymentProofImage,
-          status: 'pending' // Still pending review
-        }
-      });
+			const updated = await db
+				.update(invoices)
+				.set({
+					paymentProofImage,
+					status: 'pending' // Still pending review
+				})
+				.where(eq(invoices.id, id))
+				.returning();
 
-      return json(updated);
-    } else {
-      // Standard update
-      const updateData: any = {};
-      if (paidAmount !== undefined) {
-        updateData.paidAmount = Number(paidAmount);
-        if (Number(paidAmount) >= invoice.totalAmount) {
-          updateData.status = 'paid';
-          updateData.paidDate = new Date().toISOString().split('T')[0];
-        }
-      }
+			return json(updated[0]);
+		} else {
+			// Standard update
+			const updateData: Record<string, unknown> = {};
+			if (paidAmount !== undefined) {
+				updateData.paidAmount = Number(paidAmount);
+				if (Number(paidAmount) >= invoice.totalAmount) {
+					updateData.status = 'paid';
+					updateData.paidDate = new Date().toISOString().split('T')[0];
+				}
+			}
 
-      const updated = await db.invoice.update({
-        where: { id },
-        data: updateData
-      });
+			if (Object.keys(updateData).length === 0) {
+				return json(invoice);
+			}
 
-      return json(updated);
-    }
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+			const updated = await db
+				.update(invoices)
+				.set(updateData)
+				.where(eq(invoices.id, id))
+				.returning();
+
+			return json(updated[0]);
+		}
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const DELETE: RequestHandler = async ({ params }) => {
-  try {
-    const { id } = params;
+	try {
+		const { id } = params;
 
-    if (!id) {
-      return json({ error: 'Missing invoice ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing invoice ID' }, { status: 400 });
+		}
 
-    const invoice = await db.invoice.findUnique({
-      where: { id }
-    });
+		const invoice = await db.query.invoices.findFirst({
+			where: eq(invoices.id, id)
+		});
 
-    if (!invoice) {
-      return json({ error: 'Invoice not found' }, { status: 404 });
-    }
+		if (!invoice) {
+			return json({ error: 'Invoice not found' }, { status: 404 });
+		}
 
-    await db.$transaction(async (tx) => {
-      // Delete invoice
-      await tx.invoice.delete({
-        where: { id }
-      });
+		db.transaction((tx) => {
+			// Delete invoice
+			tx.delete(invoices).where(eq(invoices.id, id)).run();
 
-      // If pending or unpaid, subtract from room debt
-      if (invoice.status !== 'paid') {
-        const outstanding = invoice.totalAmount - invoice.paidAmount;
-        await tx.room.update({
-          where: { id: invoice.roomId },
-          data: {
-            debtAmount: { decrement: outstanding > 0 ? outstanding : 0 }
-          }
-        });
-      }
-    });
+			// If pending or unpaid, subtract from room debt
+			if (invoice.status !== 'paid') {
+				const outstanding = Math.max(invoice.totalAmount - invoice.paidAmount, 0);
+				tx.update(rooms)
+					.set({
+						debtAmount: sql`coalesce(${rooms.debtAmount}, 0) - ${outstanding}`
+					})
+					.where(eq(rooms.id, invoice.roomId))
+					.run();
+			}
+		});
 
-    return json({ success: true });
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json({ success: true });
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };

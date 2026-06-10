@@ -1,154 +1,143 @@
 import { json } from '@sveltejs/kit';
+import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/server/db';
+import { properties, blocks } from '$lib/server/db/schema';
+import { asc, eq } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
-  try {
-    const landlordId = url.searchParams.get('landlordId');
+	try {
+		const landlordId = url.searchParams.get('landlordId');
 
-    if (!landlordId) {
-      return json({ error: 'Missing landlord ID' }, { status: 400 });
-    }
+		if (!landlordId) {
+			return json({ error: 'Missing landlord ID' }, { status: 400 });
+		}
 
-    const properties = await db.property.findMany({
-      where: { landlordId },
-      include: {
-        blocks: true,
-        rooms: {
-          select: { id: true, roomNumber: true, status: true, roomType: true, monthlyRent: true }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
+		const result = await db.query.properties.findMany({
+			where: eq(properties.landlordId, landlordId),
+			with: {
+				blocks: true,
+				rooms: {
+					columns: { id: true, roomNumber: true, status: true, roomType: true, monthlyRent: true }
+				}
+			},
+			orderBy: asc(properties.name)
+		});
 
-    return json(properties);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(result);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { landlordId, name, shortName, address, blocks } = body;
+	try {
+		const body = await request.json();
+		const { landlordId, name, shortName, address, blocks: blockNames } = body;
 
-    if (!landlordId || !name || !shortName || !address) {
-      return json({ error: 'Missing required property fields' }, { status: 400 });
-    }
+		if (!landlordId || !name || !shortName || !address) {
+			return json({ error: 'Missing required property fields' }, { status: 400 });
+		}
 
-    const property = await db.$transaction(async (tx) => {
-      // Create property
-      const prop = await tx.property.create({
-        data: {
-          landlordId,
-          name,
-          shortName,
-          address
-        }
-      });
+		const property = db.transaction((tx) => {
+			// Create property
+			const prop = tx
+				.insert(properties)
+				.values({ landlordId, name, shortName, address })
+				.returning()
+				.get();
 
-      // Create initial blocks if specified
-      if (blocks && Array.isArray(blocks) && blocks.length > 0) {
-        for (const blockName of blocks) {
-          if (blockName.trim()) {
-            await tx.block.create({
-              data: {
-                propertyId: prop.id,
-                name: blockName.trim()
-              }
-            });
-          }
-        }
-      }
+			// Create initial blocks if specified
+			if (blockNames && Array.isArray(blockNames)) {
+				const values = blockNames
+					.map((blockName: string) => blockName.trim())
+					.filter((blockName: string) => blockName)
+					.map((blockName: string) => ({ propertyId: prop.id, name: blockName }));
 
-      return prop;
-    });
+				if (values.length > 0) {
+					tx.insert(blocks).values(values).run();
+				}
+			}
 
-    const fullProperty = await db.property.findUnique({
-      where: { id: property.id },
-      include: {
-        blocks: true,
-        rooms: true
-      }
-    });
+			return prop;
+		});
 
-    return json(fullProperty);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		const fullProperty = await db.query.properties.findFirst({
+			where: eq(properties.id, property.id),
+			with: {
+				blocks: true,
+				rooms: true
+			}
+		});
+
+		return json(fullProperty);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const PUT: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { id, name, shortName, address, blocks } = body;
+	try {
+		const body = await request.json();
+		const { id, name, shortName, address, blocks: blockNames } = body;
 
-    if (!id) {
-      return json({ error: 'Missing property ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing property ID' }, { status: 400 });
+		}
 
-    const property = await db.$transaction(async (tx) => {
-      // Update property details
-      const prop = await tx.property.update({
-        where: { id },
-        data: {
-          name,
-          shortName,
-          address
-        }
-      });
+		db.transaction((tx) => {
+			// Update property details
+			const updateData: Record<string, unknown> = {};
+			if (name !== undefined) updateData.name = name;
+			if (shortName !== undefined) updateData.shortName = shortName;
+			if (address !== undefined) updateData.address = address;
 
-      // Synchronize blocks (add new ones, keep existing ones)
-      if (blocks && Array.isArray(blocks)) {
-        const existingBlocks = await tx.block.findMany({
-          where: { propertyId: id }
-        });
-        const existingNames = existingBlocks.map((b) => b.name);
+			if (Object.keys(updateData).length > 0) {
+				tx.update(properties).set(updateData).where(eq(properties.id, id)).run();
+			}
 
-        for (const blockName of blocks) {
-          const trimmed = blockName.trim();
-          if (trimmed && !existingNames.includes(trimmed)) {
-            await tx.block.create({
-              data: {
-                propertyId: id,
-                name: trimmed
-              }
-            });
-          }
-        }
-      }
+			// Synchronize blocks (add new ones, keep existing ones)
+			if (blockNames && Array.isArray(blockNames)) {
+				const existingBlocks = tx.select().from(blocks).where(eq(blocks.propertyId, id)).all();
+				const existingNames = existingBlocks.map((b) => b.name);
 
-      return prop;
-    });
+				const newBlocks = blockNames
+					.map((blockName: string) => blockName.trim())
+					.filter((blockName: string) => blockName && !existingNames.includes(blockName))
+					.map((blockName: string) => ({ propertyId: id, name: blockName }));
 
-    const fullProperty = await db.property.findUnique({
-      where: { id: property.id },
-      include: {
-        blocks: true,
-        rooms: true
-      }
-    });
+				if (newBlocks.length > 0) {
+					tx.insert(blocks).values(newBlocks).run();
+				}
+			}
+		});
 
-    return json(fullProperty);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		const fullProperty = await db.query.properties.findFirst({
+			where: eq(properties.id, id),
+			with: {
+				blocks: true,
+				rooms: true
+			}
+		});
+
+		return json(fullProperty);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const DELETE: RequestHandler = async ({ url }) => {
-  try {
-    const id = url.searchParams.get('id');
+	try {
+		const id = url.searchParams.get('id');
 
-    if (!id) {
-      return json({ error: 'Missing property ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing property ID' }, { status: 400 });
+		}
 
-    await db.property.delete({
-      where: { id }
-    });
+		await db.delete(properties).where(eq(properties.id, id));
 
-    return json({ success: true });
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json({ success: true });
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };

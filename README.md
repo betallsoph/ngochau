@@ -34,8 +34,8 @@ Roomio là ứng dụng web hỗ trợ chủ trọ quản lý vận hành nhà t
 | Framework | SvelteKit 2 (Svelte 5) |
 | Ngôn ngữ | TypeScript |
 | Giao diện | Tailwind CSS 4, Lucide Icons, svelte-sonner |
-| ORM | Prisma 6 |
-| Cơ sở dữ liệu | SQLite (môi trường phát triển) |
+| ORM | Drizzle ORM |
+| Cơ sở dữ liệu | SQLite (better-sqlite3) |
 | Build tool | Vite 8 |
 | Deploy | @sveltejs/adapter-node |
 
@@ -46,16 +46,16 @@ Roomio là ứng dụng web hỗ trợ chủ trọ quản lý vận hành nhà t
 
 ## Cài đặt và chạy dự án
 
-1. Cài đặt dependencies (lệnh này cũng tự động chạy `prisma generate`):
+1. Cài đặt dependencies:
 
    ```bash
    npm install
    ```
 
-2. Khởi tạo cơ sở dữ liệu:
+2. Khởi tạo cơ sở dữ liệu (tạo file `dev.db` và áp dụng migration):
 
    ```bash
-   npx prisma migrate dev
+   npm run db:migrate
    ```
 
 3. Tạo dữ liệu mẫu:
@@ -92,18 +92,22 @@ Roomio là ứng dụng web hỗ trợ chủ trọ quản lý vận hành nhà t
 | `npm run check` | Kiểm tra type với svelte-check |
 | `npm run lint` | Kiểm tra format (Prettier) và lint (ESLint) |
 | `npm run format` | Tự động format code |
+| `npm run db:generate` | Sinh file migration mới từ thay đổi trong schema |
+| `npm run db:migrate` | Áp dụng các migration vào cơ sở dữ liệu |
+| `npm run db:push` | Đồng bộ schema trực tiếp vào DB (chỉ dùng khi thử nghiệm) |
 | `npm run seed` | Tạo dữ liệu mẫu |
 
 ## Cấu trúc thư mục
 
 ```
-prisma/
-  schema.prisma          Định nghĩa cơ sở dữ liệu (Prisma schema)
+drizzle/                 Các file migration SQL (sinh bởi drizzle-kit)
+scripts/
   seed.ts                Script tạo dữ liệu mẫu
-  migrations/            Lịch sử migration
 src/
   lib/
-    db.ts                Prisma client (singleton)
+    server/db/
+      schema.ts          Định nghĩa cơ sở dữ liệu (Drizzle schema)
+      index.ts           Kết nối SQLite và khởi tạo Drizzle client
   routes/
     +page.svelte         Trang chủ (landing)
     login/               Đăng nhập, đăng ký
@@ -123,7 +127,7 @@ static/                  Tài nguyên tĩnh (font, robots.txt)
 
 ## Mô hình dữ liệu
 
-Các thực thể chính trong `prisma/schema.prisma`:
+Các thực thể chính trong `src/lib/server/db/schema.ts`:
 
 - `User`: tài khoản chung, phân vai trò qua trường `role` (SUPER_ADMIN, LANDLORD, STAFF, TENANT). Mỗi vai trò có bảng profile tương ứng (`LandlordProfile`, `StaffProfile`, `TenantProfile`).
 - `Property` / `Block` / `Room`: cấu trúc tòa nhà - block - phòng.
@@ -136,4 +140,5 @@ Các thực thể chính trong `prisma/schema.prisma`:
 ## Ghi chú
 
 - Dự án đang ở giai đoạn phát triển, dùng SQLite và cơ chế xác thực đơn giản (chưa phù hợp cho môi trường production).
-- Khi thay đổi schema, chạy `npx prisma migrate dev` để tạo migration mới.
+- Khi thay đổi schema, chạy `npm run db:generate` để sinh migration mới, sau đó `npm run db:migrate` để áp dụng.
+- Đường dẫn file database có thể đổi qua biến môi trường `DATABASE_URL` (mặc định là `dev.db` ở thư mục gốc).

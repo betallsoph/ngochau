@@ -12,7 +12,8 @@
     AlertCircle,
     Pin,
     Calendar,
-    Home
+    Home,
+    CheckCircle2
   } from '@lucide/svelte';
 
   interface SpecialNote {

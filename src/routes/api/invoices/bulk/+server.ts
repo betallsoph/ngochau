@@ -3,7 +3,7 @@ import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { rooms, invoices, invoiceItems, meterReadings } from '$lib/server/db/schema';
-import { and, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -148,6 +148,71 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 
 		return json({ success: true, count: createdInvoices.length, invoices: createdInvoices });
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
+};
+
+// Dữ liệu chuẩn bị cho màn tạo hóa đơn hàng loạt: phòng đang có khách,
+// kèm chỉ số đã được duyệt (khách gửi + chủ chốt) của tháng để tự điền sẵn
+export const GET: RequestHandler = async ({ url }) => {
+	try {
+		const propertyId = url.searchParams.get('propertyId');
+		const month = url.searchParams.get('month');
+
+		if (!propertyId || !month) {
+			return json({ error: 'Missing propertyId or month' }, { status: 400 });
+		}
+
+		const occupiedRooms = await db.query.rooms.findMany({
+			where: and(eq(rooms.propertyId, propertyId), isNotNull(rooms.tenantId)),
+			with: {
+				tenant: { with: { user: { columns: { name: true, phone: true } } } },
+				services: { with: { service: true } }
+			}
+		});
+
+		const roomIds = occupiedRooms.map((r) => r.id);
+
+		// Chỉ số của tháng cần lập hóa đơn (mọi trạng thái, để UI hiển thị cả bản chờ duyệt)
+		const monthReadings = roomIds.length
+			? await db
+					.select()
+					.from(meterReadings)
+					.where(and(inArray(meterReadings.roomId, roomIds), eq(meterReadings.month, month)))
+			: [];
+
+		// Chỉ số đã duyệt gần nhất của các tháng trước — dùng làm chỉ số đầu kỳ
+		const previousApproved = roomIds.length
+			? await db
+					.select()
+					.from(meterReadings)
+					.where(and(inArray(meterReadings.roomId, roomIds), eq(meterReadings.status, 'approved')))
+					.orderBy(desc(meterReadings.month))
+			: [];
+
+		const readings: Record<string, Record<string, unknown>> = {};
+		for (const r of monthReadings) {
+			readings[r.roomId] = readings[r.roomId] || {};
+			readings[r.roomId][r.serviceId] = {
+				prevValue: r.prevValue,
+				currValue: r.currValue,
+				status: r.status,
+				photoUrl: r.photoUrl,
+				isAnomalous: r.isAnomalous
+			};
+		}
+
+		const prevValues: Record<string, Record<string, number>> = {};
+		for (const r of previousApproved) {
+			if (r.month >= month) continue;
+			prevValues[r.roomId] = prevValues[r.roomId] || {};
+			if (prevValues[r.roomId][r.serviceId] === undefined) {
+				prevValues[r.roomId][r.serviceId] = r.currValue;
+			}
+		}
+
+		return json({ rooms: occupiedRooms, readings, prevValues });
 	} catch (error) {
 		return json({ error: errorMessage(error) }, { status: 500 });
 	}

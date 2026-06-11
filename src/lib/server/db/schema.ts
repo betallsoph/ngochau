@@ -35,7 +35,8 @@ export const landlordProfiles = sqliteTable('LandlordProfile', {
 	bankCode: text('bankCode').notNull().default('VCB'),
 	accountNumber: text('accountNumber').notNull().default('1234567890'),
 	accountName: text('accountName').notNull().default('NGUYEN VAN HAU'),
-	bankBranch: text('bankBranch').notNull().default('Chi nhánh TP.HCM')
+	bankBranch: text('bankBranch').notNull().default('Chi nhánh TP.HCM'),
+	momoNumber: text('momoNumber') // Số điện thoại nhận Momo (tùy chọn)
 });
 
 export const staffProfiles = sqliteTable('StaffProfile', {
@@ -134,7 +135,10 @@ export const meterReadings = sqliteTable('MeterReading', {
 	prevValue: real('prevValue').notNull(),
 	currValue: real('currValue').notNull(),
 	recordedAt: text('recordedAt').notNull(), // YYYY-MM-DD
-	photoUrl: text('photoUrl') // Lưu trữ ảnh chụp đồng hồ đối chiếu
+	photoUrl: text('photoUrl'), // Lưu trữ ảnh chụp đồng hồ đối chiếu
+	status: text('status').notNull().default('approved'), // 'pending' | 'approved' | 'rejected'
+	submittedBy: text('submittedBy').notNull().default('LANDLORD'), // 'LANDLORD' | 'TENANT'
+	isAnomalous: integer('isAnomalous', { mode: 'boolean' }).notNull().default(false) // Lệch quá ngưỡng so với trung bình 3 tháng
 });
 
 export const invoices = sqliteTable('Invoice', {
@@ -153,6 +157,7 @@ export const invoices = sqliteTable('Invoice', {
 	status: text('status').notNull(), // 'paid' | 'pending' | 'overdue' | 'partial'
 	paidAmount: real('paidAmount').notNull().default(0), // Số tiền đã trả
 	paymentProofImage: text('paymentProofImage'), // Ảnh chụp hóa đơn/bill chuyển khoản
+	paymentMethod: text('paymentMethod'), // 'manual' | 'bank_webhook' — cách xác nhận thanh toán
 	createdAt: text('createdAt').notNull(), // YYYY-MM-DD
 	notes: text('notes')
 });
@@ -195,6 +200,7 @@ export const specialNotes = sqliteTable('SpecialNote', {
 		.notNull()
 		.references(() => tenantProfiles.id, { onDelete: 'cascade' }),
 	content: text('content').notNull(),
+	sender: text('sender').notNull().default('TENANT'), // 'TENANT' | 'LANDLORD' — chiều gửi của lời nhắn
 	isRead: integer('isRead', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
 });
@@ -217,16 +223,48 @@ export const announcements = sqliteTable('Announcement', {
 	title: text('title').notNull(),
 	content: text('content').notNull(),
 	isImportant: integer('isImportant', { mode: 'boolean' }).notNull().default(false), // Ghim lên đầu
-	targetType: text('targetType').notNull(), // "ALL" | "PROPERTY" | "BLOCK" | "ROOM"
+	targetType: text('targetType').notNull(), // "ALL" | "PROPERTY" | "BLOCK" | "ROOM" | "TENANT"
 	targetId: text('targetId'), // ID đối tượng nhận tương ứng
 	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
 });
 
 export const messages = sqliteTable('Message', {
 	id: text('id').primaryKey().$defaultFn(uuid),
-	conversationId: text('conversationId').notNull(),
-	senderId: text('senderId').notNull(),
+	conversationId: text('conversationId').notNull(), // Định dạng `${landlordProfileId}_${tenantProfileId}`
+	senderId: text('senderId').notNull(), // User.id của người gửi
 	content: text('content').notNull(),
+	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+});
+
+export const contracts = sqliteTable('Contract', {
+	id: text('id').primaryKey().$defaultFn(uuid),
+	tenantId: text('tenantId')
+		.notNull()
+		.references(() => tenantProfiles.id, { onDelete: 'cascade' }),
+	roomId: text('roomId')
+		.notNull()
+		.references(() => rooms.id, { onDelete: 'cascade' }),
+	startDate: text('startDate').notNull(), // YYYY-MM-DD
+	endDate: text('endDate').notNull(), // YYYY-MM-DD
+	monthlyRent: real('monthlyRent').notNull(),
+	deposit: real('deposit').notNull().default(0),
+	fileUrl: text('fileUrl'), // Ảnh/scan hợp đồng đã ký
+	status: text('status').notNull().default('active'), // 'active' | 'expired' | 'terminated'
+	notes: text('notes'),
+	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+});
+
+export const expenses = sqliteTable('Expense', {
+	id: text('id').primaryKey().$defaultFn(uuid),
+	landlordId: text('landlordId')
+		.notNull()
+		.references(() => landlordProfiles.id, { onDelete: 'cascade' }),
+	propertyId: text('propertyId').references(() => properties.id, { onDelete: 'set null' }), // Để trống nếu là chi phí chung
+	category: text('category').notNull(), // 'electricity' | 'water' | 'internet' | 'maintenance' | 'cleaning' | 'tax' | 'other'
+	description: text('description').notNull(),
+	amount: real('amount').notNull(),
+	date: text('date').notNull(), // YYYY-MM-DD
+	notes: text('notes'),
 	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
 });
 
@@ -242,7 +280,8 @@ export const landlordProfilesRelations = relations(landlordProfiles, ({ one, man
 	user: one(users, { fields: [landlordProfiles.userId], references: [users.id] }),
 	properties: many(properties),
 	services: many(services),
-	staffs: many(staffProfiles)
+	staffs: many(staffProfiles),
+	expenses: many(expenses)
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -258,7 +297,8 @@ export const tenantProfilesRelations = relations(tenantProfiles, ({ one, many })
 	user: one(users, { fields: [tenantProfiles.userId], references: [users.id] }),
 	rooms: many(rooms),
 	requests: many(maintenanceRequests),
-	specialNotes: many(specialNotes)
+	specialNotes: many(specialNotes),
+	contracts: many(contracts)
 }));
 
 export const propertiesRelations = relations(properties, ({ one, many }) => ({
@@ -267,7 +307,8 @@ export const propertiesRelations = relations(properties, ({ one, many }) => ({
 		references: [landlordProfiles.id]
 	}),
 	blocks: many(blocks),
-	rooms: many(rooms)
+	rooms: many(rooms),
+	expenses: many(expenses)
 }));
 
 export const blocksRelations = relations(blocks, ({ one, many }) => ({
@@ -290,7 +331,8 @@ export const roomsRelations = relations(rooms, ({ one, many }) => ({
 	services: many(roomServiceConfigs),
 	meterReadings: many(meterReadings),
 	invoices: many(invoices),
-	assets: many(roomAssets)
+	assets: many(roomAssets),
+	contracts: many(contracts)
 }));
 
 export const roomServiceConfigsRelations = relations(roomServiceConfigs, ({ one }) => ({
@@ -328,4 +370,17 @@ export const specialNotesRelations = relations(specialNotes, ({ one }) => ({
 
 export const roomAssetsRelations = relations(roomAssets, ({ one }) => ({
 	room: one(rooms, { fields: [roomAssets.roomId], references: [rooms.id] })
+}));
+
+export const contractsRelations = relations(contracts, ({ one }) => ({
+	tenant: one(tenantProfiles, { fields: [contracts.tenantId], references: [tenantProfiles.id] }),
+	room: one(rooms, { fields: [contracts.roomId], references: [rooms.id] })
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+	landlord: one(landlordProfiles, {
+		fields: [expenses.landlordId],
+		references: [landlordProfiles.id]
+	}),
+	property: one(properties, { fields: [expenses.propertyId], references: [properties.id] })
 }));

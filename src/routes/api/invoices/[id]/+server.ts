@@ -39,11 +39,16 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	try {
 		const { id } = params;
 		const body = await request.json();
 		const { action, paymentProofImage, paidAmount } = body;
+
+		// Khách thuê chỉ được gửi ảnh bill, không được tự xác nhận thanh toán
+		if (locals.session?.role === 'TENANT' && action !== 'uploadProof') {
+			return json({ error: 'Khách thuê chỉ được gửi ảnh xác nhận chuyển khoản' }, { status: 403 });
+		}
 
 		if (!id) {
 			return json({ error: 'Missing invoice ID' }, { status: 400 });

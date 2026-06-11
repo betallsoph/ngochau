@@ -136,6 +136,11 @@
   }
 
   function handleLogout() {
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout' })
+    }).catch(() => {});
     localStorage.removeItem('roomio_user');
     toast.success('Đã đăng xuất tài khoản quản trị');
     goto('/login');

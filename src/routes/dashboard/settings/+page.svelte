@@ -23,6 +23,7 @@
   let accountNumber = $state('');
   let accountName = $state('');
   let bankBranch = $state('');
+  let momoNumber = $state('');
 
   onMount(() => {
     const sessionStr = localStorage.getItem('roomio_user');
@@ -48,6 +49,7 @@
         accountNumber = data.accountNumber || '';
         accountName = data.accountName || '';
         bankBranch = data.bankBranch || '';
+        momoNumber = data.momoNumber || '';
       }
     } catch (e: any) {
       toast.error('Lỗi khi tải cấu hình chủ trọ: ' + e.message);
@@ -77,7 +79,8 @@
           bankCode,
           accountNumber,
           accountName,
-          bankBranch
+          bankBranch,
+          momoNumber
         })
       });
       const data = await res.json();
@@ -238,6 +241,17 @@
               type="text" 
               bind:value={bankBranch} 
               placeholder="Ví dụ: Chi nhánh Nam Sài Gòn"
+              class="w-full border-2 border-black px-3 py-2.5 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white text-black font-semibold"
+            />
+          </div>
+
+          <div class="space-y-1 sm:col-span-2">
+            <label for="s-momo" class="text-xs font-bold text-zinc-650 uppercase tracking-wider block">Số Momo nhận tiền (Tùy chọn)</label>
+            <input 
+              id="s-momo"
+              type="text" 
+              bind:value={momoNumber} 
+              placeholder="Số điện thoại ví Momo, ví dụ: 0901234567"
               class="w-full border-2 border-black px-3 py-2.5 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white text-black font-semibold"
             />
           </div>

@@ -5,13 +5,14 @@ import { db } from '$lib/server/db';
 import { users, landlordProfiles, tenantProfiles, services } from '$lib/server/db/schema';
 import { eq, or } from 'drizzle-orm';
 import crypto from 'crypto';
+import { createSession, destroySession } from '$lib/server/session';
 
 // Helper to hash password using SHA-256
 function hashPassword(password: string) {
 	return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
 		const body = await request.json();
 		const { action, email, phone, password, name, role } = body;
@@ -98,7 +99,18 @@ export const POST: RequestHandler = async ({ request }) => {
 				};
 			});
 
+			createSession(cookies, {
+				userId: user.id,
+				role: user.role,
+				landlordProfileId: user.landlordProfileId,
+				tenantProfileId: user.tenantProfileId,
+				staffProfileId: null
+			});
+
 			return json(user);
+		} else if (action === 'logout') {
+			destroySession(cookies);
+			return json({ success: true });
 		} else if (action === 'login') {
 			if ((!email && !phone) || !password) {
 				return json({ error: 'Thiếu tài khoản hoặc mật khẩu' }, { status: 400 });
@@ -129,6 +141,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			if (!user.isActive) {
 				return json({ error: 'Tài khoản đã bị tạm khóa' }, { status: 403 });
 			}
+
+			createSession(cookies, {
+				userId: user.id,
+				role: user.role,
+				landlordProfileId: user.landlordProfile?.id || null,
+				tenantProfileId: user.tenantProfile?.id || null,
+				staffProfileId: user.staffProfile?.id || null
+			});
 
 			return json({
 				id: user.id,

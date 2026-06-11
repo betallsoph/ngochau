@@ -2,8 +2,8 @@ import { json } from '@sveltejs/kit';
 import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { properties, rooms, invoices } from '$lib/server/db/schema';
-import { and, count, eq, inArray, sum } from 'drizzle-orm';
+import { properties, rooms, invoices, contracts } from '$lib/server/db/schema';
+import { and, count, eq, gte, inArray, lte, sum } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
@@ -49,11 +49,31 @@ export const GET: RequestHandler = async ({ url }) => {
 			.where(inArray(invoices.roomId, roomIdsSubquery));
 		const totalRevenue = Number(revenueResult[0]?.total ?? 0);
 
+		// 4. Count contracts expiring within the next 30 days
+		const today = new Date();
+		const todayStr = today.toISOString().split('T')[0];
+		const in30Days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+			.toISOString()
+			.split('T')[0];
+
+		const expiringRows = await db
+			.select({ value: count() })
+			.from(contracts)
+			.where(
+				and(
+					inArray(contracts.roomId, roomIdsSubquery),
+					eq(contracts.status, 'active'),
+					gte(contracts.endDate, todayStr),
+					lte(contracts.endDate, in30Days)
+				)
+			);
+		const expiringContracts = expiringRows[0]?.value ?? 0;
+
 		return json({
 			totalRevenue,
 			emptyRooms,
 			unpaidInvoices: unpaidInvoicesCount,
-			expiringContracts: 1, // Placeholder
+			expiringContracts,
 			totalRooms,
 			occupiedRooms
 		});

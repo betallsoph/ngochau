@@ -53,7 +53,7 @@ export const GET: RequestHandler = async ({ url }) => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
-		const { tenantId, content } = body;
+		const { tenantId, content, sender } = body;
 
 		if (!tenantId || !content) {
 			return json({ error: 'Missing tenant ID or content' }, { status: 400 });
@@ -61,7 +61,12 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const created = await db
 			.insert(specialNotes)
-			.values({ tenantId, content, isRead: false })
+			.values({
+				tenantId,
+				content,
+				sender: sender === 'LANDLORD' ? 'LANDLORD' : 'TENANT',
+				isRead: false
+			})
 			.returning();
 
 		return json(created[0]);

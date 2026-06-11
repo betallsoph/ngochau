@@ -51,3 +51,6 @@ dev.db
 
 # SvelteKit build output
 /.svelte-kit/
+
+# user uploads
+uploads/

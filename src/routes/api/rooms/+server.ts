@@ -17,8 +17,12 @@ export const GET: RequestHandler = async ({ url }) => {
 		const propertyId = url.searchParams.get('propertyId');
 		const blockId = url.searchParams.get('blockId');
 		const tenantId = url.searchParams.get('tenantId');
+		const status = url.searchParams.get('status');
 
 		const conditions = [];
+		if (status) {
+			conditions.push(eq(rooms.status, status));
+		}
 		if (propertyId) {
 			conditions.push(eq(rooms.propertyId, propertyId));
 		}

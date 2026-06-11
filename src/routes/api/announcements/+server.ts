@@ -3,13 +3,48 @@ import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { announcements } from '$lib/server/db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull, or } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const senderId = url.searchParams.get('senderId');
 		const targetType = url.searchParams.get('targetType');
 		const targetId = url.searchParams.get('targetId');
+
+		// Chế độ dành cho khách thuê: gom mọi thông báo nhắm tới họ
+		// (toàn hệ thống, tòa nhà, block, phòng hoặc đích danh khách)
+		const audience = url.searchParams.get('audience');
+
+		if (audience === 'tenant') {
+			const propertyId = url.searchParams.get('propertyId');
+			const blockId = url.searchParams.get('blockId');
+			const roomId = url.searchParams.get('roomId');
+			const tenantId = url.searchParams.get('tenantId');
+
+			const targets = [and(eq(announcements.targetType, 'ALL'), isNull(announcements.targetId))];
+			if (propertyId)
+				targets.push(
+					and(eq(announcements.targetType, 'PROPERTY'), eq(announcements.targetId, propertyId))
+				);
+			if (blockId)
+				targets.push(
+					and(eq(announcements.targetType, 'BLOCK'), eq(announcements.targetId, blockId))
+				);
+			if (roomId)
+				targets.push(and(eq(announcements.targetType, 'ROOM'), eq(announcements.targetId, roomId)));
+			if (tenantId)
+				targets.push(
+					and(eq(announcements.targetType, 'TENANT'), eq(announcements.targetId, tenantId))
+				);
+
+			const result = await db
+				.select()
+				.from(announcements)
+				.where(or(...targets))
+				.orderBy(desc(announcements.isImportant), desc(announcements.createdAt));
+
+			return json(result);
+		}
 
 		const conditions = [];
 		if (senderId) conditions.push(eq(announcements.senderId, senderId));

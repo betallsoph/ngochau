@@ -8,7 +8,8 @@ import {
 	rooms,
 	properties,
 	services,
-	meterReadings
+	meterReadings,
+	contracts
 } from '$lib/server/db/schema';
 import { and, eq, inArray, isNotNull, like, or } from 'drizzle-orm';
 import crypto from 'crypto';
@@ -184,6 +185,22 @@ export const POST: RequestHandler = async ({ request }) => {
 				}
 			}
 
+			// 5. Create a 12-month rental contract by default
+			const start = new Date(moveInDate);
+			const end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
+			tx.insert(contracts)
+				.values({
+					tenantId: tenantProfile.id,
+					roomId: room.id,
+					startDate: moveInDate,
+					endDate: end.toISOString().split('T')[0],
+					monthlyRent: room.monthlyRent,
+					deposit: Number(deposit),
+					notes: notes || null,
+					status: 'active'
+				})
+				.run();
+
 			return tenantProfile;
 		});
 
@@ -203,13 +220,18 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 };
 
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async ({ request, locals }) => {
 	try {
 		const body = await request.json();
 		const { id, idNumber, idFrontImage, idBackImage, vehicleImage, checkInImage } = body;
 
 		if (!id) {
 			return json({ error: 'Missing tenant profile ID' }, { status: 400 });
+		}
+
+		// Khách thuê chỉ được cập nhật hồ sơ của chính mình
+		if (locals.session?.role === 'TENANT' && id !== locals.session.tenantProfileId) {
+			return json({ error: 'Không có quyền cập nhật hồ sơ này' }, { status: 403 });
 		}
 
 		const updateData: Record<string, unknown> = {};

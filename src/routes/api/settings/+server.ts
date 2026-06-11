@@ -35,8 +35,16 @@ export const GET: RequestHandler = async ({ url }) => {
 export const PUT: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
-		const { landlordId, companyName, bankName, bankCode, accountNumber, accountName, bankBranch } =
-			body;
+		const {
+			landlordId,
+			companyName,
+			bankName,
+			bankCode,
+			accountNumber,
+			accountName,
+			bankBranch,
+			momoNumber
+		} = body;
 
 		if (!landlordId) {
 			return json({ error: 'Missing landlord ID' }, { status: 400 });
@@ -49,6 +57,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 		if (accountNumber !== undefined) updateData.accountNumber = accountNumber;
 		if (accountName) updateData.accountName = accountName.toUpperCase();
 		if (bankBranch !== undefined) updateData.bankBranch = bankBranch;
+		if (momoNumber !== undefined) updateData.momoNumber = momoNumber || null;
 
 		if (Object.keys(updateData).length === 0) {
 			return json({ error: 'No fields to update' }, { status: 400 });

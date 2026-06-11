@@ -17,7 +17,9 @@ import {
 	specialNotes,
 	roomAssets,
 	announcements,
-	messages
+	messages,
+	contracts,
+	expenses
 } from '../src/lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -215,6 +217,8 @@ const propertiesData = [
 function main() {
 	db.transaction((tx) => {
 		console.log('Bắt đầu dọn dẹp database...');
+		tx.delete(expenses).run();
+		tx.delete(contracts).run();
 		tx.delete(messages).run();
 		tx.delete(announcements).run();
 		tx.delete(roomAssets).run();
@@ -266,7 +270,8 @@ function main() {
 				bankCode: 'VCB',
 				accountNumber: '1234567890',
 				accountName: 'NGUYEN VAN HAU',
-				bankBranch: 'Chi nhánh TP.HCM'
+				bankBranch: 'Chi nhánh TP.HCM',
+				momoNumber: '0901234567'
 			})
 			.returning()
 			.get();
@@ -310,6 +315,8 @@ function main() {
 
 		console.log('Tạo tòa nhà (Properties) và các Block...');
 		const now = new Date();
+		const todayStr = now.toISOString().split('T')[0];
+		const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 		const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 		const lastMonthStr = `${lastMonth.getFullYear()}-${(lastMonth.getMonth() + 1).toString().padStart(2, '0')}`;
 
@@ -373,6 +380,8 @@ function main() {
 				const roomType = typeRandom < 0.6 ? 'standard' : typeRandom < 0.85 ? 'master' : 'balcony';
 
 				let tenantProfileId: string | null = null;
+				let tenantMoveIn = '';
+				let tenantDeposit = 0;
 				let tenantUser: { id: string; name: string; phone: string } | null = null;
 
 				if (status !== 'empty') {
@@ -401,6 +410,8 @@ function main() {
 						.returning()
 						.get();
 					tenantProfileId = profile.id;
+					tenantMoveIn = profile.moveInDate;
+					tenantDeposit = profile.deposit;
 				}
 
 				const debtAmount = status === 'debt' ? Math.floor(Math.random() * 2 + 1) * 1000000 : 0;
@@ -422,6 +433,22 @@ function main() {
 					})
 					.returning()
 					.get();
+
+				// Tạo hợp đồng thuê cho phòng có khách
+				if (tenantProfileId) {
+					const contractEnd = new Date(now.getTime() + (Math.floor(Math.random() * 355) + 10) * 24 * 60 * 60 * 1000);
+					tx.insert(contracts)
+						.values({
+							tenantId: tenantProfileId,
+							roomId: room.id,
+							startDate: tenantMoveIn,
+							endDate: contractEnd.toISOString().split('T')[0],
+							monthlyRent,
+							deposit: tenantDeposit,
+							status: 'active'
+						})
+						.run();
+				}
 
 				// Tạo cấu hình dịch vụ phòng (RoomServiceConfigs)
 				tx.insert(roomServiceConfigs)
@@ -515,6 +542,25 @@ function main() {
 
 						electricityBase = electricityCurr;
 						waterBase = waterCurr;
+					}
+
+					// Một số phòng demo chỉ số khách tự gửi đang chờ chủ chốt
+					if (Math.random() < 0.1) {
+						const elecSvc = serviceList.find((s) => s.name === 'Điện')!;
+						const pendingUsage = Math.floor(Math.random() * 180) + 30;
+						tx.insert(meterReadings)
+							.values({
+								roomId: room.id,
+								serviceId: elecSvc.id,
+								month: currentMonthStr,
+								prevValue: electricityBase,
+								currValue: electricityBase + pendingUsage,
+								recordedAt: todayStr,
+								status: 'pending',
+								submittedBy: 'TENANT',
+								isAnomalous: pendingUsage > 150
+							})
+							.run();
 					}
 
 					// Tạo hóa đơn tháng trước
@@ -703,6 +749,66 @@ function main() {
 				}
 			])
 			.run();
+
+		// Lời nhắn từ chủ nhà gửi khách (chiều ngược lại của SpecialNote)
+		const noteTenants = tx.select().from(tenantProfiles).limit(2).all();
+		if (noteTenants.length > 0) {
+			tx.insert(specialNotes)
+				.values({
+					tenantId: noteTenants[0].id,
+					content: 'Chủ nhà nhắn: Em nhớ đóng cửa ban công khi mưa giúp anh, tuần trước nước tràn vào hành lang.',
+					sender: 'LANDLORD',
+					isRead: false
+				})
+				.run();
+
+			// Hội thoại chat mẫu giữa chủ nhà và khách đầu tiên
+			const convId = `${landlordProfile.id}_${noteTenants[0].id}`;
+			tx.insert(messages)
+				.values([
+					{
+						conversationId: convId,
+						senderId: noteTenants[0].userId,
+						content: 'Anh ơi, tháng này em chuyển khoản trễ 2 ngày được không ạ?'
+					},
+					{
+						conversationId: convId,
+						senderId: landlordUser.id,
+						content: 'Được em, nhớ chuyển trước ngày 12 nhé.'
+					},
+					{
+						conversationId: convId,
+						senderId: noteTenants[0].userId,
+						content: 'Dạ em cảm ơn anh nhiều ạ!'
+					}
+				])
+				.run();
+		}
+
+		// Chi phí vận hành 3 tháng gần nhất (demo phân tích dòng tiền)
+		const expenseTemplates = [
+			{ category: 'electricity', description: 'Tiền điện khu vực chung (EVN)', amount: 4500000 },
+			{ category: 'water', description: 'Tiền nước tổng (cấp nước)', amount: 6200000 },
+			{ category: 'internet', description: 'Internet FPT 5 đường truyền', amount: 2750000 },
+			{ category: 'cleaning', description: 'Vệ sinh khu vực chung', amount: 3000000 },
+			{ category: 'maintenance', description: 'Sửa chữa lặt vặt trong tháng', amount: 1800000 }
+		];
+		for (let m = 2; m >= 0; m--) {
+			const expDate = new Date(now.getFullYear(), now.getMonth() - m, 8);
+			const expDateStr = expDate.toISOString().split('T')[0];
+			for (const t of expenseTemplates) {
+				tx.insert(expenses)
+					.values({
+						landlordId: landlordProfile.id,
+						propertyId: 'hagl3',
+						category: t.category,
+						description: t.description,
+						amount: Math.round(t.amount * (0.85 + Math.random() * 0.3)),
+						date: expDateStr
+					})
+					.run();
+			}
+		}
 	});
 
 	console.log('Hoàn thành Seeding cơ sở dữ liệu SaaS Multi-Tenant thành công!');

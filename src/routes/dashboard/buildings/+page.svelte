@@ -158,14 +158,14 @@
 
 <div class="space-y-6">
   <!-- Header -->
-  <div class="flex items-center justify-between">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-black text-black">Danh Sách Tòa Nhà</h1>
+      <h1 class="text-xl sm:text-2xl font-black text-black">Danh Sách Tòa Nhà</h1>
       <p class="text-zinc-600 text-sm mt-1 font-bold">{properties.length} tòa nhà, {properties.reduce((sum, p) => sum + p.rooms.length, 0)} phòng trọ</p>
     </div>
     <button 
       onclick={() => isAddDialogOpen = true}
-      class="bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-black text-sm"
+      class="w-full sm:w-auto bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer font-black text-sm"
     >
       Thêm tòa nhà <Plus class="h-4.5 w-4.5" />
     </button>
@@ -193,8 +193,52 @@
       </button>
     </div>
   {:else}
-    <!-- Properties Grid -->
-    <div class="grid gap-6 md:grid-cols-2">
+    <!-- Mobile card list (hidden on sm+) -->
+    <div class="sm:hidden border-2 border-black rounded-lg overflow-hidden divide-y-2 divide-black">
+      {#each properties as prop}
+        {@const stats = calculatePropertyStats(prop.rooms)}
+        <!-- Inline stat strip -->
+        <div class="p-4 space-y-2">
+          <div class="flex justify-between items-start gap-2">
+            <div class="min-w-0">
+              <h3 class="font-black text-black text-base leading-tight truncate">{prop.name}</h3>
+              <p class="text-zinc-500 text-xs mt-0.5 truncate font-semibold">{prop.shortName} · {prop.address}</p>
+            </div>
+          </div>
+          <!-- Compact inline strip -->
+          <div class="flex items-center border-2 border-black rounded-lg overflow-hidden divide-x-2 divide-black text-center">
+            <div class="flex-1 py-3 px-2">
+              <p class="text-base font-black text-black">{stats.total}</p>
+              <p class="text-[9px] text-zinc-500 font-bold uppercase">Tổng</p>
+            </div>
+            <div class="flex-1 py-3 px-2">
+              <p class="text-base font-black text-zinc-500">{stats.empty}</p>
+              <p class="text-[9px] text-zinc-500 font-bold uppercase">Trống</p>
+            </div>
+            <div class="flex-1 py-3 px-2">
+              <p class="text-base font-black text-green-600">{stats.paid}</p>
+              <p class="text-[9px] text-zinc-500 font-bold uppercase">Đã đóng</p>
+            </div>
+            <div class="flex-1 py-3 px-2">
+              <p class="text-base font-black text-red-600">{stats.debt}</p>
+              <p class="text-[9px] text-zinc-500 font-bold uppercase">Còn nợ</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-zinc-500 font-bold">Lấp đầy: {stats.total > 0 ? Math.round(((stats.total - stats.empty) / stats.total) * 100) : 0}%</span>
+            <button
+              onclick={() => { selectedProperty = prop; isDetailDrawerOpen = true; }}
+              class="bg-blue-300 text-black border-2 border-black px-3 py-1.5 rounded-[6px] text-xs font-black shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
+            >
+              Chi tiết
+            </button>
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    <!-- Desktop grid (hidden on mobile) -->
+    <div class="hidden sm:grid gap-6 md:grid-cols-2">
       {#each properties as prop}
         {@const stats = calculatePropertyStats(prop.rooms)}
         <div
@@ -206,7 +250,7 @@
         >
           <div class="flex justify-between items-start mb-4">
             <div class="flex items-center gap-3 min-w-0">
-                              <Building2 class="h-6 w-6" />
+              <Building2 class="h-6 w-6 text-blue-500" />
               <div class="min-w-0">
                 <h3 class="font-black text-black text-lg leading-tight truncate">{prop.name}</h3>
                 <p class="text-zinc-600 text-xs mt-1 truncate font-semibold">{prop.address}</p>

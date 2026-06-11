@@ -132,37 +132,41 @@
 
 <div class="space-y-6">
   <!-- Header -->
-  <div>
-    <h1 class="text-2xl font-black text-black">Báo Cáo Sự Cố</h1>
-    <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý và giải quyết các yêu cầu sửa chữa từ khách thuê phòng</p>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-black text-black">Báo Cáo Sự Cố</h1>
+      <p class="text-zinc-650 text-sm mt-1 font-bold">Quản lý và giải quyết các yêu cầu sửa chữa từ khách thuê phòng</p>
+    </div>
   </div>
 
   <!-- Filters -->
-  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary flex flex-wrap gap-4 items-center">
-    <div class="space-y-1">
-      <span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span>
-      <select 
-        bind:value={statusFilter}
-        class="border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"
-      >
-        <option value="">Tất cả trạng thái</option>
-        <option value="pending">Đang chờ (Pending)</option>
-        <option value="in_progress">Đang sửa (In Progress)</option>
-        <option value="completed">Đã xong (Completed)</option>
-        <option value="rejected">Từ chối (Rejected)</option>
-      </select>
-    </div>
+  <div class="bg-white border-2 border-black p-4 rounded-lg shadow-secondary">
+    <div class="flex gap-4 overflow-x-auto pb-1">
+      <div class="space-y-1 shrink-0">
+        <span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Trạng thái sự cố</span>
+        <select 
+          bind:value={statusFilter}
+          class="border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="pending">Đang chờ (Pending)</option>
+          <option value="in_progress">Đang sửa (In Progress)</option>
+          <option value="completed">Đã xong (Completed)</option>
+          <option value="rejected">Từ chối (Rejected)</option>
+        </select>
+      </div>
 
-    <div class="space-y-1">
-      <span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Mức độ khẩn cấp</span>
-      <select 
-        bind:value={priorityFilter}
-        class="border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"
-      >
-        <option value="">Tất cả</option>
-        <option value="important">Khẩn cấp / Gấp</option>
-        <option value="normal">Bình thường</option>
-      </select>
+      <div class="space-y-1 shrink-0">
+        <span class="text-[10px] font-bold text-zinc-650 uppercase tracking-wider block">Mức độ khẩn cấp</span>
+        <select 
+          bind:value={priorityFilter}
+          class="border-2 border-black px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white font-semibold text-black w-44"
+        >
+          <option value="">Tất cả</option>
+          <option value="important">Khẩn cấp / Gấp</option>
+          <option value="normal">Bình thường</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -178,7 +182,7 @@
     </div>
   {:else}
     <!-- Grid of incident cards -->
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {#each filteredRequests() as req}
         {@const statusBadge = req.status === 'completed' ? 'bg-green-200 text-green-800' : req.status === 'in_progress' ? 'bg-blue-300 text-black' : req.status === 'rejected' ? 'bg-zinc-200 text-zinc-600' : 'bg-red-200 text-red-800'}
 
@@ -187,7 +191,7 @@
           onkeydown={(e) => e.key === 'Enter' && (selectedRequest = req, replyText = req.response || '', isDetailOpen = true)}
           role="button"
           tabindex="0"
-          class="border-2 border-black bg-white p-5 rounded-lg shadow-secondary hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
+          class="border-2 border-black bg-white p-5 rounded-lg shadow-secondary hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
         >
           <div class="flex justify-between items-start gap-2 mb-3">
             <div>
@@ -200,7 +204,7 @@
                 </span>
               {/if}
             </div>
-            <span class="text-xs text-zinc-650 font-bold">{new Date(req.createdAt).toLocaleDateString('vi-VN')}</span>
+            <span class="text-xs text-zinc-650 font-bold shrink-0">{new Date(req.createdAt).toLocaleDateString('vi-VN')}</span>
           </div>
 
           <h3 class="font-black text-black text-base leading-tight truncate">{req.title}</h3>
@@ -255,9 +259,7 @@
         <div class="p-6 space-y-6 flex-1 overflow-y-auto">
           <!-- Drawer Header Details -->
           <div class="flex items-center gap-3 border-b-2 border-black pb-4">
-            <div class="bg-white border-2 border-black p-2.5 rounded-lg shadow-secondary text-black shrink-0">
-              <Wrench class="h-6 w-6" />
-            </div>
+            <Wrench class="h-6 w-6 text-blue-500 shrink-0" />
             <div>
               <h3 class="font-black text-black text-lg leading-tight">Yêu Cầu Sửa Chữa</h3>
               <p class="text-zinc-600 text-xs mt-0.5 font-bold">
@@ -326,7 +328,7 @@
         </div>
 
         <!-- Action update footer buttons -->
-        <div class="p-6 border-t-2 border-black bg-zinc-150 flex flex-wrap gap-3 shrink-0">
+        <div class="p-4 sm:p-6 border-t-2 border-black bg-zinc-150 flex flex-wrap gap-3 shrink-0">
           <button
             onclick={() => updateRequestStatus(selectedRequest!.id, 'in_progress')}
             disabled={isSubmitting}

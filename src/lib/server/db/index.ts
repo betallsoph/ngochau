@@ -1,9 +1,19 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
 import * as schema from './schema';
 
-const sqlite = new Database(process.env.DATABASE_URL ?? 'dev.db');
-sqlite.pragma('journal_mode = WAL');
-sqlite.pragma('foreign_keys = ON');
+// Production: đặt DATABASE_URL = postgres://user:pass@host:5432/dbname
+// Dev/local: bỏ trống DATABASE_URL — dùng PGlite (Postgres nhúng, lưu vào thư mục ./pgdata,
+// không cần cài Postgres server)
 
-export const db = drizzle(sqlite, { schema });
+const databaseUrl = process.env.DATABASE_URL;
+
+function createDb() {
+	if (databaseUrl && databaseUrl.startsWith('postgres')) {
+		return drizzle(databaseUrl, { schema });
+	}
+	return drizzlePglite(process.env.PGLITE_DIR ?? './pgdata', { schema });
+}
+
+export const db = createDb();
+export type Db = typeof db;

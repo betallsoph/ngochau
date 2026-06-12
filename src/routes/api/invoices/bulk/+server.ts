@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const today = new Date().toISOString().split('T')[0];
 
-		const createdInvoices = db.transaction((tx) => {
+		const createdInvoices = await db.transaction(async (tx) => {
 			const results = [];
 
 			for (const room of occupiedRooms) {
@@ -69,16 +69,14 @@ export const POST: RequestHandler = async ({ request }) => {
 						details = `Chỉ số: ${prev} -> ${curr} (${usage} ${config.service.name === 'Điện' ? 'kWh' : 'm³'}) x ${new Intl.NumberFormat('vi-VN').format(rate)}đ`;
 
 						// Record this meter reading
-						tx.insert(meterReadings)
-							.values({
-								roomId: room.id,
-								serviceId: config.serviceId,
-								month,
-								prevValue: prev,
-								currValue: curr,
-								recordedAt: today
-							})
-							.run();
+						await tx.insert(meterReadings).values({
+							roomId: room.id,
+							serviceId: config.serviceId,
+							month,
+							prevValue: prev,
+							currValue: curr,
+							recordedAt: today
+						});
 					} else if (config.service.type === 'FLAT_ROOM') {
 						amount = rate * config.quantity;
 						details = `Phí cố định x ${config.quantity} phòng`;
@@ -107,39 +105,38 @@ export const POST: RequestHandler = async ({ request }) => {
 				const invoiceId = `INV-${month.replace('-', '')}-${randomHex}`;
 
 				// Create Invoice
-				const inv = tx
-					.insert(invoices)
-					.values({
-						id: invoiceId,
-						roomId: room.id,
-						roomNumber: room.roomNumber,
-						tenantName,
-						tenantPhone,
-						month,
-						rentAmount: room.monthlyRent,
-						totalAmount,
-						dueDate,
-						status: 'pending',
-						paidAmount: 0,
-						createdAt: today,
-						notes: `Hóa đơn tự động tháng ${month}`
-					})
-					.returning()
-					.get();
+				const inv = (
+					await tx
+						.insert(invoices)
+						.values({
+							id: invoiceId,
+							roomId: room.id,
+							roomNumber: room.roomNumber,
+							tenantName,
+							tenantPhone,
+							month,
+							rentAmount: room.monthlyRent,
+							totalAmount,
+							dueDate,
+							status: 'pending',
+							paidAmount: 0,
+							createdAt: today,
+							notes: `Hóa đơn tự động tháng ${month}`
+						})
+						.returning()
+				)[0];
 
 				// Create Invoice Items
-				tx.insert(invoiceItems)
-					.values(items.map((item) => ({ ...item, invoiceId: inv.id })))
-					.run();
+				await tx.insert(invoiceItems).values(items.map((item) => ({ ...item, invoiceId: inv.id })));
 
 				// Increment Room outstanding debt
-				tx.update(rooms)
+				await tx
+					.update(rooms)
 					.set({
 						status: 'debt',
 						debtAmount: sql`coalesce(${rooms.debtAmount}, 0) + ${totalAmount}`
 					})
-					.where(eq(rooms.id, room.id))
-					.run();
+					.where(eq(rooms.id, room.id));
 
 				results.push(inv);
 			}

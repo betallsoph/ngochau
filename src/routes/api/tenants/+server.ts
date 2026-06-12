@@ -91,55 +91,58 @@ export const POST: RequestHandler = async ({ request }) => {
 			where: or(eq(users.email, email), eq(users.phone, phone))
 		});
 
-		const tenant = db.transaction((tx) => {
+		const tenant = await db.transaction(async (tx) => {
 			const user =
 				existingUser ??
-				tx
-					.insert(users)
-					.values({ email, phone, passwordHash: hashPassword(password), name, role: 'TENANT' })
-					.returning()
-					.get();
+				(
+					await tx
+						.insert(users)
+						.values({ email, phone, passwordHash: hashPassword(password), name, role: 'TENANT' })
+						.returning()
+				)[0];
 
 			// 2. Check if TenantProfile exists
-			let tenantProfile = tx
-				.select()
-				.from(tenantProfiles)
-				.where(eq(tenantProfiles.userId, user.id))
-				.get();
+			let tenantProfile = (
+				await tx.select().from(tenantProfiles).where(eq(tenantProfiles.userId, user.id))
+			)[0];
 
 			if (!tenantProfile) {
-				tenantProfile = tx
-					.insert(tenantProfiles)
-					.values({ userId: user.id, idNumber, moveInDate, deposit: Number(deposit), notes })
-					.returning()
-					.get();
+				tenantProfile = (
+					await tx
+						.insert(tenantProfiles)
+						.values({ userId: user.id, idNumber, moveInDate, deposit: Number(deposit), notes })
+						.returning()
+				)[0];
 			} else {
 				// Update details if profile already exists
-				tenantProfile = tx
-					.update(tenantProfiles)
-					.set({ idNumber, moveInDate, deposit: Number(deposit), notes })
-					.where(eq(tenantProfiles.id, tenantProfile.id))
-					.returning()
-					.get();
+				tenantProfile = (
+					await tx
+						.update(tenantProfiles)
+						.set({ idNumber, moveInDate, deposit: Number(deposit), notes })
+						.where(eq(tenantProfiles.id, tenantProfile.id))
+						.returning()
+				)[0];
 			}
 
 			// 3. Link room to tenant
-			const room = tx
-				.update(rooms)
-				.set({
-					tenantId: tenantProfile.id,
-					status: 'paid', // Mark as active/paid initially
-					debtAmount: 0
-				})
-				.where(eq(rooms.id, roomId))
-				.returning()
-				.get();
+			const room = (
+				await tx
+					.update(rooms)
+					.set({
+						tenantId: tenantProfile.id,
+						status: 'paid', // Mark as active/paid initially
+						debtAmount: 0
+					})
+					.where(eq(rooms.id, roomId))
+					.returning()
+			)[0];
 
-			const property = tx
-				.select({ landlordId: properties.landlordId })
-				.from(properties)
-				.where(eq(properties.id, room.propertyId))
-				.get();
+			const property = (
+				await tx
+					.select({ landlordId: properties.landlordId })
+					.from(properties)
+					.where(eq(properties.id, room.propertyId))
+			)[0];
 
 			// 4. Record initial meters
 			const checkInMonth = moveInDate.slice(0, 7); // "YYYY-MM"
@@ -147,59 +150,55 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			if (property) {
 				// Find electricity & water services for the landlord
-				const electricityService = tx
-					.select()
-					.from(services)
-					.where(and(eq(services.landlordId, property.landlordId), like(services.name, '%Điện%')))
-					.get();
-				const waterService = tx
-					.select()
-					.from(services)
-					.where(and(eq(services.landlordId, property.landlordId), like(services.name, '%Nước%')))
-					.get();
+				const electricityService = (
+					await tx
+						.select()
+						.from(services)
+						.where(and(eq(services.landlordId, property.landlordId), like(services.name, '%Điện%')))
+				)[0];
+				const waterService = (
+					await tx
+						.select()
+						.from(services)
+						.where(and(eq(services.landlordId, property.landlordId), like(services.name, '%Nước%')))
+				)[0];
 
 				if (electricityService && initialElectricity !== undefined) {
-					tx.insert(meterReadings)
-						.values({
-							roomId: room.id,
-							serviceId: electricityService.id,
-							month: checkInMonth,
-							prevValue: Number(initialElectricity),
-							currValue: Number(initialElectricity),
-							recordedAt: today
-						})
-						.run();
+					await tx.insert(meterReadings).values({
+						roomId: room.id,
+						serviceId: electricityService.id,
+						month: checkInMonth,
+						prevValue: Number(initialElectricity),
+						currValue: Number(initialElectricity),
+						recordedAt: today
+					});
 				}
 
 				if (waterService && initialWater !== undefined) {
-					tx.insert(meterReadings)
-						.values({
-							roomId: room.id,
-							serviceId: waterService.id,
-							month: checkInMonth,
-							prevValue: Number(initialWater),
-							currValue: Number(initialWater),
-							recordedAt: today
-						})
-						.run();
+					await tx.insert(meterReadings).values({
+						roomId: room.id,
+						serviceId: waterService.id,
+						month: checkInMonth,
+						prevValue: Number(initialWater),
+						currValue: Number(initialWater),
+						recordedAt: today
+					});
 				}
 			}
 
 			// 5. Create a 12-month rental contract by default
 			const start = new Date(moveInDate);
 			const end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
-			tx.insert(contracts)
-				.values({
-					tenantId: tenantProfile.id,
-					roomId: room.id,
-					startDate: moveInDate,
-					endDate: end.toISOString().split('T')[0],
-					monthlyRent: room.monthlyRent,
-					deposit: Number(deposit),
-					notes: notes || null,
-					status: 'active'
-				})
-				.run();
+			await tx.insert(contracts).values({
+				tenantId: tenantProfile.id,
+				roomId: room.id,
+				startDate: moveInDate,
+				endDate: end.toISOString().split('T')[0],
+				monthlyRent: room.monthlyRent,
+				deposit: Number(deposit),
+				notes: notes || null,
+				status: 'active'
+			});
 
 			return tenantProfile;
 		});

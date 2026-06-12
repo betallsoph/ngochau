@@ -103,48 +103,47 @@ export const POST: RequestHandler = async ({ request }) => {
 		const randomHex = Math.floor(1000 + Math.random() * 9000).toString();
 		const invoiceId = `INV-${month.replace('-', '')}-${randomHex}`;
 
-		const invoice = db.transaction((tx) => {
+		const invoice = await db.transaction(async (tx) => {
 			// 1. Create Invoice
-			const inv = tx
-				.insert(invoices)
-				.values({
-					id: invoiceId,
-					roomId,
-					roomNumber: room.roomNumber,
-					tenantName,
-					tenantPhone,
-					month,
-					rentAmount: Number(rentAmount),
-					totalAmount,
-					dueDate,
-					status: 'pending',
-					paidAmount: 0,
-					createdAt: new Date().toISOString().split('T')[0],
-					notes
-				})
-				.returning()
-				.get();
+			const inv = (
+				await tx
+					.insert(invoices)
+					.values({
+						id: invoiceId,
+						roomId,
+						roomNumber: room.roomNumber,
+						tenantName,
+						tenantPhone,
+						month,
+						rentAmount: Number(rentAmount),
+						totalAmount,
+						dueDate,
+						status: 'pending',
+						paidAmount: 0,
+						createdAt: new Date().toISOString().split('T')[0],
+						notes
+					})
+					.returning()
+			)[0];
 
 			// 2. Create Invoice Items
-			tx.insert(invoiceItems)
-				.values(
-					invoiceItemList.map((item) => ({
-						invoiceId: inv.id,
-						name: item.name,
-						amount: Number(item.amount),
-						details: item.details
-					}))
-				)
-				.run();
+			await tx.insert(invoiceItems).values(
+				invoiceItemList.map((item) => ({
+					invoiceId: inv.id,
+					name: item.name,
+					amount: Number(item.amount),
+					details: item.details
+				}))
+			);
 
 			// 3. Update room status to debt (since invoice is pending payment)
-			tx.update(rooms)
+			await tx
+				.update(rooms)
 				.set({
 					status: 'debt',
 					debtAmount: sql`coalesce(${rooms.debtAmount}, 0) + ${totalAmount}`
 				})
-				.where(eq(rooms.id, roomId))
-				.run();
+				.where(eq(rooms.id, roomId));
 
 			return inv;
 		});

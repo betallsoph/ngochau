@@ -54,3 +54,6 @@ dev.db
 
 # user uploads
 uploads/
+
+# PGlite local database (dev)
+pgdata/

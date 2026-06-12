@@ -34,38 +34,35 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Missing required service fields' }, { status: 400 });
 		}
 
-		const service = db.transaction((tx) => {
-			const created = tx
-				.insert(services)
-				.values({
-					landlordId,
-					name,
-					type, // "METERED" | "FLAT_ROOM" | "FLAT_PERSON" | "FLAT_VEHICLE"
-					defaultRate: Number(defaultRate),
-					isActive: isActive !== undefined ? isActive : true
-				})
-				.returning()
-				.get();
+		const service = await db.transaction(async (tx) => {
+			const created = (
+				await tx
+					.insert(services)
+					.values({
+						landlordId,
+						name,
+						type, // "METERED" | "FLAT_ROOM" | "FLAT_PERSON" | "FLAT_VEHICLE"
+						defaultRate: Number(defaultRate),
+						isActive: isActive !== undefined ? isActive : true
+					})
+					.returning()
+			)[0];
 
 			// Automatically register this new service for all existing rooms belonging to this landlord
-			const landlordRooms = tx
+			const landlordRooms = await tx
 				.select({ id: rooms.id })
 				.from(rooms)
 				.innerJoin(properties, eq(rooms.propertyId, properties.id))
-				.where(eq(properties.landlordId, landlordId))
-				.all();
-
+				.where(eq(properties.landlordId, landlordId));
 			if (landlordRooms.length > 0) {
-				tx.insert(roomServiceConfigs)
-					.values(
-						landlordRooms.map((room) => ({
-							roomId: room.id,
-							serviceId: created.id,
-							customRate: null,
-							quantity: 1
-						}))
-					)
-					.run();
+				await tx.insert(roomServiceConfigs).values(
+					landlordRooms.map((room) => ({
+						roomId: room.id,
+						serviceId: created.id,
+						customRate: null,
+						quantity: 1
+					}))
+				);
 			}
 
 			return created;

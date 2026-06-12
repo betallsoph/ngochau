@@ -75,51 +75,49 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Số phòng này đã tồn tại trong tòa nhà này' }, { status: 400 });
 		}
 
-		const room = db.transaction((tx) => {
+		const room = await db.transaction(async (tx) => {
 			// Create the room
-			const r = tx
-				.insert(rooms)
-				.values({
-					propertyId,
-					blockId: blockId || null,
-					roomNumber,
-					roomCode: roomCode || null,
-					roomType,
-					floor: floor ? Number(floor) : null,
-					status: 'empty',
-					monthlyRent: Number(monthlyRent),
-					area: area ? Number(area) : null,
-					debtAmount: 0
-				})
-				.returning()
-				.get();
+			const r = (
+				await tx
+					.insert(rooms)
+					.values({
+						propertyId,
+						blockId: blockId || null,
+						roomNumber,
+						roomCode: roomCode || null,
+						roomType,
+						floor: floor ? Number(floor) : null,
+						status: 'empty',
+						monthlyRent: Number(monthlyRent),
+						area: area ? Number(area) : null,
+						debtAmount: 0
+					})
+					.returning()
+			)[0];
 
 			// Find landlord's services
-			const property = tx
-				.select({ landlordId: properties.landlordId })
-				.from(properties)
-				.where(eq(properties.id, propertyId))
-				.get();
+			const property = (
+				await tx
+					.select({ landlordId: properties.landlordId })
+					.from(properties)
+					.where(eq(properties.id, propertyId))
+			)[0];
 
 			if (property) {
-				const activeServices = tx
+				const activeServices = await tx
 					.select()
 					.from(services)
-					.where(and(eq(services.landlordId, property.landlordId), eq(services.isActive, true)))
-					.all();
-
+					.where(and(eq(services.landlordId, property.landlordId), eq(services.isActive, true)));
 				// Map room to all active services with default rates
 				if (activeServices.length > 0) {
-					tx.insert(roomServiceConfigs)
-						.values(
-							activeServices.map((service) => ({
-								roomId: r.id,
-								serviceId: service.id,
-								customRate: null,
-								quantity: 1
-							}))
-						)
-						.run();
+					await tx.insert(roomServiceConfigs).values(
+						activeServices.map((service) => ({
+							roomId: r.id,
+							serviceId: service.id,
+							customRate: null,
+							quantity: 1
+						}))
+					);
 				}
 			}
 

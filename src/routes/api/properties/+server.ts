@@ -39,13 +39,11 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Missing required property fields' }, { status: 400 });
 		}
 
-		const property = db.transaction((tx) => {
+		const property = await db.transaction(async (tx) => {
 			// Create property
-			const prop = tx
-				.insert(properties)
-				.values({ landlordId, name, shortName, address })
-				.returning()
-				.get();
+			const prop = (
+				await tx.insert(properties).values({ landlordId, name, shortName, address }).returning()
+			)[0];
 
 			// Create initial blocks if specified
 			if (blockNames && Array.isArray(blockNames)) {
@@ -55,7 +53,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					.map((blockName: string) => ({ propertyId: prop.id, name: blockName }));
 
 				if (values.length > 0) {
-					tx.insert(blocks).values(values).run();
+					await tx.insert(blocks).values(values);
 				}
 			}
 
@@ -85,7 +83,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 			return json({ error: 'Missing property ID' }, { status: 400 });
 		}
 
-		db.transaction((tx) => {
+		await db.transaction(async (tx) => {
 			// Update property details
 			const updateData: Record<string, unknown> = {};
 			if (name !== undefined) updateData.name = name;
@@ -93,12 +91,12 @@ export const PUT: RequestHandler = async ({ request }) => {
 			if (address !== undefined) updateData.address = address;
 
 			if (Object.keys(updateData).length > 0) {
-				tx.update(properties).set(updateData).where(eq(properties.id, id)).run();
+				await tx.update(properties).set(updateData).where(eq(properties.id, id));
 			}
 
 			// Synchronize blocks (add new ones, keep existing ones)
 			if (blockNames && Array.isArray(blockNames)) {
-				const existingBlocks = tx.select().from(blocks).where(eq(blocks.propertyId, id)).all();
+				const existingBlocks = await tx.select().from(blocks).where(eq(blocks.propertyId, id));
 				const existingNames = existingBlocks.map((b) => b.name);
 
 				const newBlocks = blockNames
@@ -107,7 +105,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 					.map((blockName: string) => ({ propertyId: id, name: blockName }));
 
 				if (newBlocks.length > 0) {
-					tx.insert(blocks).values(newBlocks).run();
+					await tx.insert(blocks).values(newBlocks);
 				}
 			}
 		});

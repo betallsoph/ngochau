@@ -69,28 +69,29 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 				return json({ error: 'Invoice is already paid' }, { status: 400 });
 			}
 
-			const updated = db.transaction((tx) => {
+			const updated = await db.transaction(async (tx) => {
 				// 1. Update invoice status
-				const inv = tx
-					.update(invoices)
-					.set({
-						status: 'paid',
-						paidAmount: invoice.totalAmount,
-						paidDate: new Date().toISOString().split('T')[0]
-					})
-					.where(eq(invoices.id, id))
-					.returning()
-					.get();
+				const inv = (
+					await tx
+						.update(invoices)
+						.set({
+							status: 'paid',
+							paidAmount: invoice.totalAmount,
+							paidDate: new Date().toISOString().split('T')[0]
+						})
+						.where(eq(invoices.id, id))
+						.returning()
+				)[0];
 
 				// 2. Reduce the room's outstanding debt
 				const outstandingAmount = Math.max(invoice.totalAmount - invoice.paidAmount, 0);
-				tx.update(rooms)
+				await tx
+					.update(rooms)
 					.set({
 						status: 'paid', // Mark as paid/clean
 						debtAmount: sql`coalesce(${rooms.debtAmount}, 0) - ${outstandingAmount}`
 					})
-					.where(eq(rooms.id, invoice.roomId))
-					.run();
+					.where(eq(rooms.id, invoice.roomId));
 
 				return inv;
 			});
@@ -155,19 +156,19 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			return json({ error: 'Invoice not found' }, { status: 404 });
 		}
 
-		db.transaction((tx) => {
+		await db.transaction(async (tx) => {
 			// Delete invoice
-			tx.delete(invoices).where(eq(invoices.id, id)).run();
+			await tx.delete(invoices).where(eq(invoices.id, id));
 
 			// If pending or unpaid, subtract from room debt
 			if (invoice.status !== 'paid') {
 				const outstanding = Math.max(invoice.totalAmount - invoice.paidAmount, 0);
-				tx.update(rooms)
+				await tx
+					.update(rooms)
 					.set({
 						debtAmount: sql`coalesce(${rooms.debtAmount}, 0) - ${outstanding}`
 					})
-					.where(eq(rooms.id, invoice.roomId))
-					.run();
+					.where(eq(rooms.id, invoice.roomId));
 			}
 		});
 

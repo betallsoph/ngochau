@@ -20,9 +20,10 @@
 		"cleanup:uploads": "tsx scripts/cleanup-uploads.ts"
 	},
 	"dependencies": {
+		"@electric-sql/pglite": "^0.5.2",
 		"@lucide/svelte": "^1.17.0",
-		"better-sqlite3": "^12.10.0",
 		"drizzle-orm": "^0.45.2",
+		"pg": "^8.21.0",
 		"svelte-sonner": "^0.3.28"
 	},
 	"devDependencies": {
@@ -31,8 +32,8 @@
 		"@sveltejs/kit": "^2.57.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@tailwindcss/vite": "^4.2.2",
-		"@types/better-sqlite3": "^7.6.13",
 		"@types/node": "^24",
+		"@types/pg": "^8.20.0",
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^10.4.0",
 		"eslint-config-prettier": "^10.1.8",

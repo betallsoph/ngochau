@@ -214,89 +214,91 @@ const propertiesData = [
 	}
 ];
 
-function main() {
-	db.transaction((tx) => {
+async function main() {
+	await db.transaction(async (tx) => {
 		console.log('Bắt đầu dọn dẹp database...');
-		tx.delete(expenses).run();
-		tx.delete(contracts).run();
-		tx.delete(messages).run();
-		tx.delete(announcements).run();
-		tx.delete(roomAssets).run();
-		tx.delete(specialNotes).run();
-		tx.delete(maintenanceRequests).run();
-		tx.delete(invoiceItems).run();
-		tx.delete(invoices).run();
-		tx.delete(meterReadings).run();
-		tx.delete(roomServiceConfigs).run();
-		tx.delete(rooms).run();
-		tx.delete(services).run();
-		tx.delete(blocks).run();
-		tx.delete(properties).run();
-		tx.delete(tenantProfiles).run();
-		tx.delete(staffProfiles).run();
-		tx.delete(landlordProfiles).run();
-		tx.delete(users).run();
+		await tx.delete(expenses);
+		await tx.delete(contracts);
+		await tx.delete(messages);
+		await tx.delete(announcements);
+		await tx.delete(roomAssets);
+		await tx.delete(specialNotes);
+		await tx.delete(maintenanceRequests);
+		await tx.delete(invoiceItems);
+		await tx.delete(invoices);
+		await tx.delete(meterReadings);
+		await tx.delete(roomServiceConfigs);
+		await tx.delete(rooms);
+		await tx.delete(services);
+		await tx.delete(blocks);
+		await tx.delete(properties);
+		await tx.delete(tenantProfiles);
+		await tx.delete(staffProfiles);
+		await tx.delete(landlordProfiles);
+		await tx.delete(users);
 
 		console.log('Khởi tạo Super Admin...');
-		tx.insert(users)
-			.values({
-				email: 'superadmin@ngochau.com',
-				phone: '0999999999',
-				passwordHash: hashPassword('admin'),
-				name: 'Super Admin',
-				role: 'SUPER_ADMIN'
-			})
-			.run();
+		await tx.insert(users).values({
+			email: 'superadmin@ngochau.com',
+			phone: '0999999999',
+			passwordHash: hashPassword('admin'),
+			name: 'Super Admin',
+			role: 'SUPER_ADMIN'
+		});
 
 		console.log('Khởi tạo Landlord (Chủ trọ Ngọc Hậu)...');
-		const landlordUser = tx
-			.insert(users)
-			.values({
-				email: 'ngochau@gmail.com',
-				phone: '0901234567',
-				passwordHash: hashPassword('password'),
-				name: 'Nguyễn Văn Hậu',
-				role: 'LANDLORD'
-			})
-			.returning()
-			.get();
+		const landlordUser = (
+			await tx
+				.insert(users)
+				.values({
+					email: 'ngochau@gmail.com',
+					phone: '0901234567',
+					passwordHash: hashPassword('password'),
+					name: 'Nguyễn Văn Hậu',
+					role: 'LANDLORD'
+				})
+				.returning()
+		)[0];
 
-		const landlordProfile = tx
-			.insert(landlordProfiles)
-			.values({
-				userId: landlordUser.id,
-				companyName: 'Nhà Trọ Ngọc Hậu',
-				bankName: 'Vietcombank',
-				bankCode: 'VCB',
-				accountNumber: '1234567890',
-				accountName: 'NGUYEN VAN HAU',
-				bankBranch: 'Chi nhánh TP.HCM',
-				momoNumber: '0901234567'
-			})
-			.returning()
-			.get();
+		const landlordProfile = (
+			await tx
+				.insert(landlordProfiles)
+				.values({
+					userId: landlordUser.id,
+					companyName: 'Nhà Trọ Ngọc Hậu',
+					bankName: 'Vietcombank',
+					bankCode: 'VCB',
+					accountNumber: '1234567890',
+					accountName: 'NGUYEN VAN HAU',
+					bankBranch: 'Chi nhánh TP.HCM',
+					momoNumber: '0901234567'
+				})
+				.returning()
+		)[0];
 
 		console.log('Khởi tạo Staff (Nhân viên quản lý)...');
-		const staffUser = tx
-			.insert(users)
-			.values({
-				email: 'nhanvien@nhatro.com',
-				phone: '0987654321',
-				passwordHash: hashPassword('staff'),
-				name: 'Trần Thị B',
-				role: 'STAFF'
-			})
-			.returning()
-			.get();
+		const staffUser = (
+			await tx
+				.insert(users)
+				.values({
+					email: 'nhanvien@nhatro.com',
+					phone: '0987654321',
+					passwordHash: hashPassword('staff'),
+					name: 'Trần Thị B',
+					role: 'STAFF'
+				})
+				.returning()
+		)[0];
 
-		const staffProfile = tx
-			.insert(staffProfiles)
-			.values({ userId: staffUser.id, landlordId: landlordProfile.id })
-			.returning()
-			.get();
+		const staffProfile = (
+			await tx
+				.insert(staffProfiles)
+				.values({ userId: staffUser.id, landlordId: landlordProfile.id })
+				.returning()
+		)[0];
 
 		console.log('Tạo Dịch vụ động (Dynamic Services)...');
-		const serviceList = tx
+		const serviceList = await tx
 			.insert(services)
 			.values([
 				{ landlordId: landlordProfile.id, name: 'Điện', type: 'METERED', defaultRate: 3500 },
@@ -310,8 +312,7 @@ function main() {
 					defaultRate: 100000
 				}
 			])
-			.returning()
-			.all();
+			.returning();
 
 		console.log('Tạo tòa nhà (Properties) và các Block...');
 		const now = new Date();
@@ -323,17 +324,18 @@ function main() {
 		let globalInvoiceCounter = 1;
 
 		for (const propData of propertiesData) {
-			const property = tx
-				.insert(properties)
-				.values({
-					id: propData.id,
-					landlordId: landlordProfile.id,
-					name: propData.name,
-					shortName: propData.shortName,
-					address: propData.address
-				})
-				.returning()
-				.get();
+			const property = (
+				await tx
+					.insert(properties)
+					.values({
+						id: propData.id,
+						landlordId: landlordProfile.id,
+						name: propData.name,
+						shortName: propData.shortName,
+						address: propData.address
+					})
+					.returning()
+			)[0];
 
 			// Tạo các Block/Tầng cho tòa nhà
 			const totalRooms = propData.id === 'mp6' ? 8 : 40; // Giới hạn số phòng lại một chút để seed chạy nhanh hơn
@@ -342,11 +344,12 @@ function main() {
 
 			const blockList = [];
 			for (let f = 1; f <= floors; f++) {
-				const block = tx
-					.insert(blocks)
-					.values({ propertyId: property.id, name: `Tầng ${f}` })
-					.returning()
-					.get();
+				const block = (
+					await tx
+						.insert(blocks)
+						.values({ propertyId: property.id, name: `Tầng ${f}` })
+						.returning()
+				)[0];
 				blockList.push(block);
 			}
 
@@ -386,29 +389,31 @@ function main() {
 
 				if (status !== 'empty') {
 					const phone = generatePhone();
-					tenantUser = tx
-						.insert(users)
-						.values({
-							email: `tenant_${phone}@ngochau.com`,
-							phone: phone,
-							passwordHash: hashPassword('123456'), // Mật khẩu mặc định của khách
-							name: generateVietnameseName(),
-							role: 'TENANT'
-						})
-						.returning()
-						.get();
+					tenantUser = (
+						await tx
+							.insert(users)
+							.values({
+								email: `tenant_${phone}@ngochau.com`,
+								phone: phone,
+								passwordHash: hashPassword('123456'), // Mật khẩu mặc định của khách
+								name: generateVietnameseName(),
+								role: 'TENANT'
+							})
+							.returning()
+					)[0];
 
-					const profile = tx
-						.insert(tenantProfiles)
-						.values({
-							userId: tenantUser.id,
-							idNumber: generateIdNumber(),
-							moveInDate: generateMoveInDate(),
-							deposit: (Math.floor(Math.random() * 2) + 1) * monthlyRent,
-							notes: Math.random() > 0.85 ? 'Khách đóng tiền đúng hạn' : null
-						})
-						.returning()
-						.get();
+					const profile = (
+						await tx
+							.insert(tenantProfiles)
+							.values({
+								userId: tenantUser.id,
+								idNumber: generateIdNumber(),
+								moveInDate: generateMoveInDate(),
+								deposit: (Math.floor(Math.random() * 2) + 1) * monthlyRent,
+								notes: Math.random() > 0.85 ? 'Khách đóng tiền đúng hạn' : null
+							})
+							.returning()
+					)[0];
 					tenantProfileId = profile.id;
 					tenantMoveIn = profile.moveInDate;
 					tenantDeposit = profile.deposit;
@@ -416,79 +421,75 @@ function main() {
 
 				const debtAmount = status === 'debt' ? Math.floor(Math.random() * 2 + 1) * 1000000 : 0;
 
-				const room = tx
-					.insert(rooms)
-					.values({
-						propertyId: property.id,
-						blockId: block.id,
-						roomNumber,
-						roomCode,
-						roomType,
-						floor,
-						status,
-						monthlyRent,
-						area,
-						debtAmount,
-						tenantId: tenantProfileId
-					})
-					.returning()
-					.get();
+				const room = (
+					await tx
+						.insert(rooms)
+						.values({
+							propertyId: property.id,
+							blockId: block.id,
+							roomNumber,
+							roomCode,
+							roomType,
+							floor,
+							status,
+							monthlyRent,
+							area,
+							debtAmount,
+							tenantId: tenantProfileId
+						})
+						.returning()
+				)[0];
 
 				// Tạo hợp đồng thuê cho phòng có khách
 				if (tenantProfileId) {
-					const contractEnd = new Date(now.getTime() + (Math.floor(Math.random() * 355) + 10) * 24 * 60 * 60 * 1000);
-					tx.insert(contracts)
-						.values({
-							tenantId: tenantProfileId,
-							roomId: room.id,
-							startDate: tenantMoveIn,
-							endDate: contractEnd.toISOString().split('T')[0],
-							monthlyRent,
-							deposit: tenantDeposit,
-							status: 'active'
-						})
-						.run();
+					const contractEnd = new Date(
+						now.getTime() + (Math.floor(Math.random() * 355) + 10) * 24 * 60 * 60 * 1000
+					);
+					await tx.insert(contracts).values({
+						tenantId: tenantProfileId,
+						roomId: room.id,
+						startDate: tenantMoveIn,
+						endDate: contractEnd.toISOString().split('T')[0],
+						monthlyRent,
+						deposit: tenantDeposit,
+						status: 'active'
+					});
 				}
 
 				// Tạo cấu hình dịch vụ phòng (RoomServiceConfigs)
-				tx.insert(roomServiceConfigs)
-					.values(
-						serviceList.map((service) => {
-							const quantity =
-								service.name === 'Gửi xe máy' ? Math.floor(Math.random() * 2) + 1 : 1;
+				await tx.insert(roomServiceConfigs).values(
+					serviceList.map((service) => {
+						const quantity = service.name === 'Gửi xe máy' ? Math.floor(Math.random() * 2) + 1 : 1;
 
-							// 10% phòng có đơn giá Wifi tùy biến
-							const isCustomWifi = service.name === 'Wifi' && Math.random() < 0.1;
+						// 10% phòng có đơn giá Wifi tùy biến
+						const isCustomWifi = service.name === 'Wifi' && Math.random() < 0.1;
 
-							return {
-								roomId: room.id,
-								serviceId: service.id,
-								customRate: isCustomWifi ? 80000 : null, // Wifi giảm giá riêng
-								quantity
-							};
-						})
-					)
-					.run();
+						return {
+							roomId: room.id,
+							serviceId: service.id,
+							customRate: isCustomWifi ? 80000 : null, // Wifi giảm giá riêng
+							quantity
+						};
+					})
+				);
 
 				// Tạo thiết bị phòng (RoomAssets)
 				if (Math.random() > 0.3) {
-					tx.insert(roomAssets)
-						.values([
-							{
-								roomId: room.id,
-								name: 'Máy lạnh Daikin 1.5 HP',
-								code: `DAI-${property.id}-${roomNumber}`,
-								status: 'good',
-								notes: 'Mới lắp đặt năm 2024'
-							},
-							{
-								roomId: room.id,
-								name: 'Tủ lạnh Panasonic 180L',
-								code: `PAN-${property.id}-${roomNumber}`,
-								status: 'good'
-							}
-						])
-						.run();
+					await tx.insert(roomAssets).values([
+						{
+							roomId: room.id,
+							name: 'Máy lạnh Daikin 1.5 HP',
+							code: `DAI-${property.id}-${roomNumber}`,
+							status: 'good',
+							notes: 'Mới lắp đặt năm 2024'
+						},
+						{
+							roomId: room.id,
+							name: 'Tủ lạnh Panasonic 180L',
+							code: `PAN-${property.id}-${roomNumber}`,
+							status: 'good'
+						}
+					]);
 				}
 
 				// Tạo chỉ số điện nước & hóa đơn
@@ -515,30 +516,29 @@ function main() {
 						const waterCurr = waterBase + waterUsage;
 
 						// Tạo Điện reading
-						lastReading = tx
-							.insert(meterReadings)
-							.values({
-								roomId: room.id,
-								serviceId: elecService.id,
-								month: monthStr,
-								prevValue: electricityBase,
-								currValue: electricityCurr,
-								recordedAt
-							})
-							.returning()
-							.get();
+						lastReading = (
+							await tx
+								.insert(meterReadings)
+								.values({
+									roomId: room.id,
+									serviceId: elecService.id,
+									month: monthStr,
+									prevValue: electricityBase,
+									currValue: electricityCurr,
+									recordedAt
+								})
+								.returning()
+						)[0];
 
 						// Tạo Nước reading
-						tx.insert(meterReadings)
-							.values({
-								roomId: room.id,
-								serviceId: watService.id,
-								month: monthStr,
-								prevValue: waterBase,
-								currValue: waterCurr,
-								recordedAt
-							})
-							.run();
+						await tx.insert(meterReadings).values({
+							roomId: room.id,
+							serviceId: watService.id,
+							month: monthStr,
+							prevValue: waterBase,
+							currValue: waterCurr,
+							recordedAt
+						});
 
 						electricityBase = electricityCurr;
 						waterBase = waterCurr;
@@ -548,19 +548,17 @@ function main() {
 					if (Math.random() < 0.1) {
 						const elecSvc = serviceList.find((s) => s.name === 'Điện')!;
 						const pendingUsage = Math.floor(Math.random() * 180) + 30;
-						tx.insert(meterReadings)
-							.values({
-								roomId: room.id,
-								serviceId: elecSvc.id,
-								month: currentMonthStr,
-								prevValue: electricityBase,
-								currValue: electricityBase + pendingUsage,
-								recordedAt: todayStr,
-								status: 'pending',
-								submittedBy: 'TENANT',
-								isAnomalous: pendingUsage > 150
-							})
-							.run();
+						await tx.insert(meterReadings).values({
+							roomId: room.id,
+							serviceId: elecSvc.id,
+							month: currentMonthStr,
+							prevValue: electricityBase,
+							currValue: electricityBase + pendingUsage,
+							recordedAt: todayStr,
+							status: 'pending',
+							submittedBy: 'TENANT',
+							isAnomalous: pendingUsage > 150
+						});
 					}
 
 					// Tạo hóa đơn tháng trước
@@ -569,12 +567,10 @@ function main() {
 						const racService = serviceList.find((s) => s.name === 'Rác')!;
 						const xeService = serviceList.find((s) => s.name === 'Gửi xe máy')!;
 
-						const configs = tx
+						const configs = await tx
 							.select()
 							.from(roomServiceConfigs)
-							.where(eq(roomServiceConfigs.roomId, room.id))
-							.all();
-
+							.where(eq(roomServiceConfigs.roomId, room.id));
 						const elecConfig = configs.find((c) => c.serviceId === elecService.id)!;
 						const watConfig = configs.find((c) => c.serviceId === watService.id)!;
 						const wifiConfig = configs.find((c) => c.serviceId === wifiService.id)!;
@@ -608,65 +604,64 @@ function main() {
 							invoiceStatus = Math.random() > 0.5 ? 'overdue' : 'pending';
 						}
 
-						const invoice = tx
-							.insert(invoices)
-							.values({
-								id: `INV-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${globalInvoiceCounter.toString().padStart(4, '0')}`,
-								roomId: room.id,
-								roomNumber,
-								tenantName: tenantUser.name,
-								tenantPhone: tenantUser.phone,
-								month: lastMonthStr,
-								rentAmount: monthlyRent,
-								totalAmount,
-								dueDate: new Date(now.getFullYear(), now.getMonth(), 10)
-									.toISOString()
-									.split('T')[0],
-								paidDate,
-								paidAmount: invoiceStatus === 'paid' ? totalAmount : 0,
-								status: invoiceStatus,
-								createdAt: new Date(now.getFullYear(), now.getMonth(), 1)
-									.toISOString()
-									.split('T')[0]
-							})
-							.returning()
-							.get();
+						const invoice = (
+							await tx
+								.insert(invoices)
+								.values({
+									id: `INV-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${globalInvoiceCounter.toString().padStart(4, '0')}`,
+									roomId: room.id,
+									roomNumber,
+									tenantName: tenantUser.name,
+									tenantPhone: tenantUser.phone,
+									month: lastMonthStr,
+									rentAmount: monthlyRent,
+									totalAmount,
+									dueDate: new Date(now.getFullYear(), now.getMonth(), 10)
+										.toISOString()
+										.split('T')[0],
+									paidDate,
+									paidAmount: invoiceStatus === 'paid' ? totalAmount : 0,
+									status: invoiceStatus,
+									createdAt: new Date(now.getFullYear(), now.getMonth(), 1)
+										.toISOString()
+										.split('T')[0]
+								})
+								.returning()
+						)[0];
 
 						// Tạo các dòng chi tiết hóa đơn (InvoiceItems)
-						tx.insert(invoiceItems)
-							.values([
-								{
-									invoiceId: invoice.id,
-									name: 'Tiền phòng',
-									amount: monthlyRent,
-									details: `Tháng ${lastMonthStr.split('-')[1]}`
-								},
-								{
-									invoiceId: invoice.id,
-									name: 'Tiền điện',
-									amount: eAmount,
-									details: `Chỉ số: ${lastReading.prevValue} -> ${lastReading.currValue} (${eUsage} kWh) x ${eRate}đ`
-								},
-								{
-									invoiceId: invoice.id,
-									name: 'Tiền nước',
-									amount: wAmount,
-									details: `${wUsage} m³ x ${wRate}đ`
-								},
-								{
-									invoiceId: invoice.id,
-									name: 'Phí dịch vụ (Wifi, Rác)',
-									amount: wifiRate + racRate,
-									details: 'Cố định hàng tháng'
-								},
-								{
-									invoiceId: invoice.id,
-									name: 'Phí gửi xe máy',
-									amount: xeRate * xeConfig.quantity,
-									details: `${xeConfig.quantity} xe x ${xeRate}đ`
-								}
-							])
-							.run();
+						await tx.insert(invoiceItems).values([
+							{
+								invoiceId: invoice.id,
+								name: 'Tiền phòng',
+								amount: monthlyRent,
+								details: `Tháng ${lastMonthStr.split('-')[1]}`
+							},
+							{
+								invoiceId: invoice.id,
+								name: 'Tiền điện',
+								amount: eAmount,
+								details: `Chỉ số: ${lastReading.prevValue} -> ${lastReading.currValue} (${eUsage} kWh) x ${eRate}đ`
+							},
+							{
+								invoiceId: invoice.id,
+								name: 'Tiền nước',
+								amount: wAmount,
+								details: `${wUsage} m³ x ${wRate}đ`
+							},
+							{
+								invoiceId: invoice.id,
+								name: 'Phí dịch vụ (Wifi, Rác)',
+								amount: wifiRate + racRate,
+								details: 'Cố định hàng tháng'
+							},
+							{
+								invoiceId: invoice.id,
+								name: 'Phí gửi xe máy',
+								amount: xeRate * xeConfig.quantity,
+								details: `${xeConfig.quantity} xe x ${xeRate}đ`
+							}
+						]);
 
 						globalInvoiceCounter++;
 					}
@@ -675,114 +670,103 @@ function main() {
 		}
 
 		// Tạo các lời nhắn đặc biệt từ khách thuê (SpecialNotes)
-		const someTenants = tx.select().from(tenantProfiles).limit(3).all();
-		someTenants.forEach((tenant, idx) => {
-			tx.insert(specialNotes)
-				.values({
-					tenantId: tenant.id,
-					content: `Khách gửi lời nhắn số ${idx + 1}: Vui lòng xuất hóa đơn trước ngày mùng 2 hàng tháng giúp em để công ty thanh toán.`,
-					isRead: false
-				})
-				.run();
-		});
+		const someTenants = await tx.select().from(tenantProfiles).limit(3);
+		for (let idx = 0; idx < someTenants.length; idx++) {
+			await tx.insert(specialNotes).values({
+				tenantId: someTenants[idx].id,
+				content: `Khách gửi lời nhắn số ${idx + 1}: Vui lòng xuất hóa đơn trước ngày mùng 2 hàng tháng giúp em để công ty thanh toán.`,
+				isRead: false
+			});
+		}
 
 		// Tạo yêu cầu sửa chữa (MaintenanceRequests)
-		const firstTenants = tx.select().from(tenantProfiles).limit(2).all();
+		const firstTenants = await tx.select().from(tenantProfiles).limit(2);
 
 		if (firstTenants.length >= 2) {
-			const firstRoom = tx.select().from(rooms).where(eq(rooms.tenantId, firstTenants[0].id)).get();
-			const secondRoom = tx
-				.select()
-				.from(rooms)
-				.where(eq(rooms.tenantId, firstTenants[1].id))
-				.get();
+			const firstRoom = (
+				await tx.select().from(rooms).where(eq(rooms.tenantId, firstTenants[0].id))
+			)[0];
+			const secondRoom = (
+				await tx.select().from(rooms).where(eq(rooms.tenantId, firstTenants[1].id))
+			)[0];
 
-			tx.insert(maintenanceRequests)
-				.values({
-					tenantId: firstTenants[0].id,
-					roomNumber: firstRoom?.roomNumber || '101',
-					buildingName: 'Hoàng Anh Gia Lai 3',
-					category: 'plumbing',
-					title: 'Bồn cầu toilet bị nghẹt',
-					description: 'Nước xả không trôi từ tối qua, cần thợ qua thông nghẹt gấp.',
-					status: 'pending',
-					priority: 'important'
-				})
-				.run();
+			await tx.insert(maintenanceRequests).values({
+				tenantId: firstTenants[0].id,
+				roomNumber: firstRoom?.roomNumber || '101',
+				buildingName: 'Hoàng Anh Gia Lai 3',
+				category: 'plumbing',
+				title: 'Bồn cầu toilet bị nghẹt',
+				description: 'Nước xả không trôi từ tối qua, cần thợ qua thông nghẹt gấp.',
+				status: 'pending',
+				priority: 'important'
+			});
 
-			tx.insert(maintenanceRequests)
-				.values({
-					tenantId: firstTenants[1].id,
-					roomNumber: secondRoom?.roomNumber || '205',
-					buildingName: 'Phú Hoàng Anh',
-					category: 'electrical',
-					title: 'Máy lạnh chảy nước và không lạnh',
-					description:
-						'Máy lạnh phòng ngủ có tiếng kêu to, bị chảy nước rỉ xuống giường và gió thổi ra không mát.',
-					status: 'in_progress',
-					priority: 'important',
-					response: 'Đã ghi nhận, thợ điện lạnh sẽ qua bảo trì trong chiều nay.',
-					assignedToId: staffProfile.id
-				})
-				.run();
+			await tx.insert(maintenanceRequests).values({
+				tenantId: firstTenants[1].id,
+				roomNumber: secondRoom?.roomNumber || '205',
+				buildingName: 'Phú Hoàng Anh',
+				category: 'electrical',
+				title: 'Máy lạnh chảy nước và không lạnh',
+				description:
+					'Máy lạnh phòng ngủ có tiếng kêu to, bị chảy nước rỉ xuống giường và gió thổi ra không mát.',
+				status: 'in_progress',
+				priority: 'important',
+				response: 'Đã ghi nhận, thợ điện lạnh sẽ qua bảo trì trong chiều nay.',
+				assignedToId: staffProfile.id
+			});
 		}
 
 		// Tạo thông báo ghim (Announcements)
-		tx.insert(announcements)
-			.values([
-				{
-					senderId: landlordUser.id,
-					title: 'Thông báo đóng tiền nhà tháng 6',
-					content:
-						'Nhắc nhở toàn bộ cư dân đóng tiền trước ngày mùng 10 hàng tháng để tránh phí phạt quá hạn. Xin cảm ơn.',
-					isImportant: true,
-					targetType: 'ALL'
-				},
-				{
-					senderId: landlordUser.id,
-					title: 'Bảo trì hệ thống thang máy',
-					content:
-						'Thang máy Block A sẽ tạm ngưng hoạt động từ 9h đến 12h ngày mai để thực hiện bảo trì định kỳ.',
-					isImportant: false,
-					targetType: 'PROPERTY',
-					targetId: 'hagl3'
-				}
-			])
-			.run();
+		await tx.insert(announcements).values([
+			{
+				senderId: landlordUser.id,
+				title: 'Thông báo đóng tiền nhà tháng 6',
+				content:
+					'Nhắc nhở toàn bộ cư dân đóng tiền trước ngày mùng 10 hàng tháng để tránh phí phạt quá hạn. Xin cảm ơn.',
+				isImportant: true,
+				targetType: 'ALL'
+			},
+			{
+				senderId: landlordUser.id,
+				title: 'Bảo trì hệ thống thang máy',
+				content:
+					'Thang máy Block A sẽ tạm ngưng hoạt động từ 9h đến 12h ngày mai để thực hiện bảo trì định kỳ.',
+				isImportant: false,
+				targetType: 'PROPERTY',
+				targetId: 'hagl3'
+			}
+		]);
 
 		// Lời nhắn từ chủ nhà gửi khách (chiều ngược lại của SpecialNote)
-		const noteTenants = tx.select().from(tenantProfiles).limit(2).all();
+		const noteTenants = await tx.select().from(tenantProfiles).limit(2);
 		if (noteTenants.length > 0) {
-			tx.insert(specialNotes)
-				.values({
-					tenantId: noteTenants[0].id,
-					content: 'Chủ nhà nhắn: Em nhớ đóng cửa ban công khi mưa giúp anh, tuần trước nước tràn vào hành lang.',
-					sender: 'LANDLORD',
-					isRead: false
-				})
-				.run();
+			await tx.insert(specialNotes).values({
+				tenantId: noteTenants[0].id,
+				content:
+					'Chủ nhà nhắn: Em nhớ đóng cửa ban công khi mưa giúp anh, tuần trước nước tràn vào hành lang.',
+				sender: 'LANDLORD',
+				isRead: false
+			});
 
 			// Hội thoại chat mẫu giữa chủ nhà và khách đầu tiên
 			const convId = `${landlordProfile.id}_${noteTenants[0].id}`;
-			tx.insert(messages)
-				.values([
-					{
-						conversationId: convId,
-						senderId: noteTenants[0].userId,
-						content: 'Anh ơi, tháng này em chuyển khoản trễ 2 ngày được không ạ?'
-					},
-					{
-						conversationId: convId,
-						senderId: landlordUser.id,
-						content: 'Được em, nhớ chuyển trước ngày 12 nhé.'
-					},
-					{
-						conversationId: convId,
-						senderId: noteTenants[0].userId,
-						content: 'Dạ em cảm ơn anh nhiều ạ!'
-					}
-				])
-				.run();
+			await tx.insert(messages).values([
+				{
+					conversationId: convId,
+					senderId: noteTenants[0].userId,
+					content: 'Anh ơi, tháng này em chuyển khoản trễ 2 ngày được không ạ?'
+				},
+				{
+					conversationId: convId,
+					senderId: landlordUser.id,
+					content: 'Được em, nhớ chuyển trước ngày 12 nhé.'
+				},
+				{
+					conversationId: convId,
+					senderId: noteTenants[0].userId,
+					content: 'Dạ em cảm ơn anh nhiều ạ!'
+				}
+			]);
 		}
 
 		// Chi phí vận hành 3 tháng gần nhất (demo phân tích dòng tiền)
@@ -797,16 +781,14 @@ function main() {
 			const expDate = new Date(now.getFullYear(), now.getMonth() - m, 8);
 			const expDateStr = expDate.toISOString().split('T')[0];
 			for (const t of expenseTemplates) {
-				tx.insert(expenses)
-					.values({
-						landlordId: landlordProfile.id,
-						propertyId: 'hagl3',
-						category: t.category,
-						description: t.description,
-						amount: Math.round(t.amount * (0.85 + Math.random() * 0.3)),
-						date: expDateStr
-					})
-					.run();
+				await tx.insert(expenses).values({
+					landlordId: landlordProfile.id,
+					propertyId: 'hagl3',
+					category: t.category,
+					description: t.description,
+					amount: Math.round(t.amount * (0.85 + Math.random() * 0.3)),
+					date: expDateStr
+				});
 			}
 		}
 	});
@@ -814,9 +796,9 @@ function main() {
 	console.log('Hoàn thành Seeding cơ sở dữ liệu SaaS Multi-Tenant thành công!');
 }
 
-try {
-	main();
-} catch (e) {
-	console.error(e);
-	process.exit(1);
-}
+main()
+	.then(() => process.exit(0))
+	.catch((e) => {
+		console.error(e);
+		process.exit(1);
+	});

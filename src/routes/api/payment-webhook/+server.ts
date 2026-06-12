@@ -59,24 +59,24 @@ export const POST: RequestHandler = async ({ request }) => {
 		const fullyPaid = newPaidAmount >= invoice.totalAmount;
 		const today = new Date().toISOString().split('T')[0];
 
-		db.transaction((tx) => {
-			tx.update(invoices)
+		await db.transaction(async (tx) => {
+			await tx
+				.update(invoices)
 				.set({
 					paidAmount: newPaidAmount,
 					status: fullyPaid ? 'paid' : 'partial',
 					paidDate: fullyPaid ? today : null,
 					paymentMethod: 'bank_webhook'
 				})
-				.where(eq(invoices.id, invoiceId))
-				.run();
+				.where(eq(invoices.id, invoiceId));
 
-			tx.update(rooms)
+			await tx
+				.update(rooms)
 				.set({
-					debtAmount: sql`max(coalesce(${rooms.debtAmount}, 0) - ${amount}, 0)`,
+					debtAmount: sql`greatest(coalesce(${rooms.debtAmount}, 0) - ${amount}, 0)`,
 					...(fullyPaid ? { status: 'paid' } : {})
 				})
-				.where(eq(rooms.id, invoice.roomId))
-				.run();
+				.where(eq(rooms.id, invoice.roomId));
 		});
 
 		return json({ success: true, invoiceId, status: fullyPaid ? 'paid' : 'partial' });

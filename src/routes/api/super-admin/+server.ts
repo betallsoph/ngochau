@@ -48,7 +48,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 			return json({ error: 'Missing landlord ID or user ID' }, { status: 400 });
 		}
 
-		const updated = db.transaction((tx) => {
+		const updated = await db.transaction(async (tx) => {
 			let profile = null;
 			let user = null;
 
@@ -58,17 +58,20 @@ export const PUT: RequestHandler = async ({ request }) => {
 				if (subValidUntil) updateData.subValidUntil = new Date(subValidUntil);
 
 				if (Object.keys(updateData).length > 0) {
-					profile = tx
-						.update(landlordProfiles)
-						.set(updateData)
-						.where(eq(landlordProfiles.id, landlordId))
-						.returning()
-						.get();
+					profile = (
+						await tx
+							.update(landlordProfiles)
+							.set(updateData)
+							.where(eq(landlordProfiles.id, landlordId))
+							.returning()
+					)[0];
 				}
 			}
 
 			if (userId && isActive !== undefined) {
-				user = tx.update(users).set({ isActive }).where(eq(users.id, userId)).returning().get();
+				user = (
+					await tx.update(users).set({ isActive }).where(eq(users.id, userId)).returning()
+				)[0];
 			}
 
 			return { profile, user };

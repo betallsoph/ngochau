@@ -1,10 +1,11 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, boolean, timestamp, doublePrecision } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 const uuid = () => crypto.randomUUID();
 const now = () => new Date();
+const datetime = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
-export const users = sqliteTable('User', {
+export const users = pgTable('User', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	email: text('email').notNull().unique(),
 	phone: text('phone').notNull().unique(),
@@ -12,22 +13,19 @@ export const users = sqliteTable('User', {
 	name: text('name').notNull(),
 	avatar: text('avatar'),
 	role: text('role').notNull().default('TENANT'), // "SUPER_ADMIN" | "LANDLORD" | "STAFF" | "TENANT"
-	isActive: integer('isActive', { mode: 'boolean' }).notNull().default(true),
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now),
-	updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
-		.notNull()
-		.$defaultFn(now)
-		.$onUpdateFn(now)
+	isActive: boolean('isActive').notNull().default(true),
+	createdAt: datetime('createdAt').notNull().$defaultFn(now),
+	updatedAt: datetime('updatedAt').notNull().$defaultFn(now).$onUpdateFn(now)
 });
 
-export const landlordProfiles = sqliteTable('LandlordProfile', {
+export const landlordProfiles = pgTable('LandlordProfile', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	userId: text('userId')
 		.notNull()
 		.unique()
 		.references(() => users.id, { onDelete: 'cascade' }),
 	subscriptionType: text('subscriptionType').notNull().default('FREE'), // FREE, PREMIUM, ENTERPRISE
-	subValidUntil: integer('subValidUntil', { mode: 'timestamp_ms' }),
+	subValidUntil: datetime('subValidUntil'),
 	companyName: text('companyName'),
 
 	// Thông tin ngân hàng nhận tiền chuyển khoản (Cấu hình riêng của mỗi chủ trọ)
@@ -39,7 +37,7 @@ export const landlordProfiles = sqliteTable('LandlordProfile', {
 	momoNumber: text('momoNumber') // Số điện thoại nhận Momo (tùy chọn)
 });
 
-export const staffProfiles = sqliteTable('StaffProfile', {
+export const staffProfiles = pgTable('StaffProfile', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	userId: text('userId')
 		.notNull()
@@ -50,7 +48,7 @@ export const staffProfiles = sqliteTable('StaffProfile', {
 		.references(() => landlordProfiles.id, { onDelete: 'cascade' })
 });
 
-export const tenantProfiles = sqliteTable('TenantProfile', {
+export const tenantProfiles = pgTable('TenantProfile', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	userId: text('userId')
 		.notNull()
@@ -62,11 +60,11 @@ export const tenantProfiles = sqliteTable('TenantProfile', {
 	vehicleImage: text('vehicleImage'), // Ảnh xe máy/Cà vẹt
 	checkInImage: text('checkInImage'), // Ảnh chụp lúc bàn giao phòng
 	moveInDate: text('moveInDate').notNull(),
-	deposit: real('deposit').notNull(),
+	deposit: doublePrecision('deposit').notNull(),
 	notes: text('notes')
 });
 
-export const properties = sqliteTable('Property', {
+export const properties = pgTable('Property', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	landlordId: text('landlordId')
 		.notNull()
@@ -74,10 +72,10 @@ export const properties = sqliteTable('Property', {
 	name: text('name').notNull(),
 	shortName: text('shortName').notNull(),
 	address: text('address').notNull(),
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+	createdAt: datetime('createdAt').notNull().$defaultFn(now)
 });
 
-export const blocks = sqliteTable('Block', {
+export const blocks = pgTable('Block', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	propertyId: text('propertyId')
 		.notNull()
@@ -85,18 +83,18 @@ export const blocks = sqliteTable('Block', {
 	name: text('name').notNull() // ví dụ: "Block A", "Khu nhà cấp 4"
 });
 
-export const services = sqliteTable('Service', {
+export const services = pgTable('Service', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	landlordId: text('landlordId')
 		.notNull()
 		.references(() => landlordProfiles.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(), // ví dụ: "Điện", "Nước", "Wifi", "Gửi xe máy"
 	type: text('type').notNull(), // "METERED" | "FLAT_ROOM" | "FLAT_PERSON" | "FLAT_VEHICLE"
-	defaultRate: real('defaultRate').notNull(), // Đơn giá chuẩn áp dụng cho toàn bộ cơ sở
-	isActive: integer('isActive', { mode: 'boolean' }).notNull().default(true)
+	defaultRate: doublePrecision('defaultRate').notNull(), // Đơn giá chuẩn áp dụng cho toàn bộ cơ sở
+	isActive: boolean('isActive').notNull().default(true)
 });
 
-export const rooms = sqliteTable('Room', {
+export const rooms = pgTable('Room', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	propertyId: text('propertyId')
 		.notNull()
@@ -107,13 +105,13 @@ export const rooms = sqliteTable('Room', {
 	roomType: text('roomType').notNull(), // 'standard' | 'master' | 'balcony'
 	floor: integer('floor'),
 	status: text('status').notNull(), // 'empty' | 'paid' | 'debt'
-	monthlyRent: real('monthlyRent').notNull(),
-	area: real('area'),
-	debtAmount: real('debtAmount').default(0),
+	monthlyRent: doublePrecision('monthlyRent').notNull(),
+	area: doublePrecision('area'),
+	debtAmount: doublePrecision('debtAmount').default(0),
 	tenantId: text('tenantId').references(() => tenantProfiles.id, { onDelete: 'set null' })
 });
 
-export const roomServiceConfigs = sqliteTable('RoomServiceConfig', {
+export const roomServiceConfigs = pgTable('RoomServiceConfig', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	roomId: text('roomId')
 		.notNull()
@@ -121,27 +119,27 @@ export const roomServiceConfigs = sqliteTable('RoomServiceConfig', {
 	serviceId: text('serviceId')
 		.notNull()
 		.references(() => services.id, { onDelete: 'cascade' }),
-	customRate: real('customRate'), // Nếu không null, ghi đè đơn giá defaultRate của Service
+	customRate: doublePrecision('customRate'), // Nếu không null, ghi đè đơn giá defaultRate của Service
 	quantity: integer('quantity').notNull().default(1) // Số lượng đăng ký (áp dụng cho xe máy, số người)
 });
 
-export const meterReadings = sqliteTable('MeterReading', {
+export const meterReadings = pgTable('MeterReading', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	roomId: text('roomId')
 		.notNull()
 		.references(() => rooms.id, { onDelete: 'cascade' }),
 	serviceId: text('serviceId').notNull(), // Chỉ số đo lường cho dịch vụ nào (Ví dụ dịch vụ Điện / Nước)
 	month: text('month').notNull(), // Định dạng YYYY-MM
-	prevValue: real('prevValue').notNull(),
-	currValue: real('currValue').notNull(),
+	prevValue: doublePrecision('prevValue').notNull(),
+	currValue: doublePrecision('currValue').notNull(),
 	recordedAt: text('recordedAt').notNull(), // YYYY-MM-DD
 	photoUrl: text('photoUrl'), // Lưu trữ ảnh chụp đồng hồ đối chiếu
 	status: text('status').notNull().default('approved'), // 'pending' | 'approved' | 'rejected'
 	submittedBy: text('submittedBy').notNull().default('LANDLORD'), // 'LANDLORD' | 'TENANT'
-	isAnomalous: integer('isAnomalous', { mode: 'boolean' }).notNull().default(false) // Lệch quá ngưỡng so với trung bình 3 tháng
+	isAnomalous: boolean('isAnomalous').notNull().default(false) // Lệch quá ngưỡng so với trung bình 3 tháng
 });
 
-export const invoices = sqliteTable('Invoice', {
+export const invoices = pgTable('Invoice', {
 	id: text('id').primaryKey(),
 	roomId: text('roomId')
 		.notNull()
@@ -150,29 +148,29 @@ export const invoices = sqliteTable('Invoice', {
 	tenantName: text('tenantName').notNull(),
 	tenantPhone: text('tenantPhone').notNull(),
 	month: text('month').notNull(), // YYYY-MM
-	rentAmount: real('rentAmount').notNull(),
-	totalAmount: real('totalAmount').notNull(),
+	rentAmount: doublePrecision('rentAmount').notNull(),
+	totalAmount: doublePrecision('totalAmount').notNull(),
 	dueDate: text('dueDate').notNull(), // YYYY-MM-DD
 	paidDate: text('paidDate'), // YYYY-MM-DD
 	status: text('status').notNull(), // 'paid' | 'pending' | 'overdue' | 'partial'
-	paidAmount: real('paidAmount').notNull().default(0), // Số tiền đã trả
+	paidAmount: doublePrecision('paidAmount').notNull().default(0), // Số tiền đã trả
 	paymentProofImage: text('paymentProofImage'), // Ảnh chụp hóa đơn/bill chuyển khoản
 	paymentMethod: text('paymentMethod'), // 'manual' | 'bank_webhook' — cách xác nhận thanh toán
 	createdAt: text('createdAt').notNull(), // YYYY-MM-DD
 	notes: text('notes')
 });
 
-export const invoiceItems = sqliteTable('InvoiceItem', {
+export const invoiceItems = pgTable('InvoiceItem', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	invoiceId: text('invoiceId')
 		.notNull()
 		.references(() => invoices.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(), // ví dụ: "Tiền phòng", "Tiền điện tháng 5", "Wifi"
-	amount: real('amount').notNull(),
+	amount: doublePrecision('amount').notNull(),
 	details: text('details') // ví dụ: "Chỉ số: 1025 -> 1205 (180 kWh) x 3.500đ"
 });
 
-export const maintenanceRequests = sqliteTable('MaintenanceRequest', {
+export const maintenanceRequests = pgTable('MaintenanceRequest', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	tenantId: text('tenantId')
 		.notNull()
@@ -185,27 +183,24 @@ export const maintenanceRequests = sqliteTable('MaintenanceRequest', {
 	imageUrl: text('imageUrl'), // Ảnh sự cố
 	status: text('status').notNull(), // 'pending' | 'in_progress' | 'completed' | 'rejected'
 	priority: text('priority').notNull(), // 'important' | 'normal'
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now),
-	updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
-		.notNull()
-		.$defaultFn(now)
-		.$onUpdateFn(now),
+	createdAt: datetime('createdAt').notNull().$defaultFn(now),
+	updatedAt: datetime('updatedAt').notNull().$defaultFn(now).$onUpdateFn(now),
 	response: text('response'),
 	assignedToId: text('assignedToId').references(() => staffProfiles.id, { onDelete: 'set null' })
 });
 
-export const specialNotes = sqliteTable('SpecialNote', {
+export const specialNotes = pgTable('SpecialNote', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	tenantId: text('tenantId')
 		.notNull()
 		.references(() => tenantProfiles.id, { onDelete: 'cascade' }),
 	content: text('content').notNull(),
 	sender: text('sender').notNull().default('TENANT'), // 'TENANT' | 'LANDLORD' — chiều gửi của lời nhắn
-	isRead: integer('isRead', { mode: 'boolean' }).notNull().default(false),
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+	isRead: boolean('isRead').notNull().default(false),
+	createdAt: datetime('createdAt').notNull().$defaultFn(now)
 });
 
-export const roomAssets = sqliteTable('RoomAsset', {
+export const roomAssets = pgTable('RoomAsset', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	roomId: text('roomId')
 		.notNull()
@@ -217,26 +212,26 @@ export const roomAssets = sqliteTable('RoomAsset', {
 	notes: text('notes')
 });
 
-export const announcements = sqliteTable('Announcement', {
+export const announcements = pgTable('Announcement', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	senderId: text('senderId').notNull(), // Người gửi (Super Admin hoặc Landlord)
 	title: text('title').notNull(),
 	content: text('content').notNull(),
-	isImportant: integer('isImportant', { mode: 'boolean' }).notNull().default(false), // Ghim lên đầu
+	isImportant: boolean('isImportant').notNull().default(false), // Ghim lên đầu
 	targetType: text('targetType').notNull(), // "ALL" | "PROPERTY" | "BLOCK" | "ROOM" | "TENANT"
 	targetId: text('targetId'), // ID đối tượng nhận tương ứng
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+	createdAt: datetime('createdAt').notNull().$defaultFn(now)
 });
 
-export const messages = sqliteTable('Message', {
+export const messages = pgTable('Message', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	conversationId: text('conversationId').notNull(), // Định dạng `${landlordProfileId}_${tenantProfileId}`
 	senderId: text('senderId').notNull(), // User.id của người gửi
 	content: text('content').notNull(),
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+	createdAt: datetime('createdAt').notNull().$defaultFn(now)
 });
 
-export const contracts = sqliteTable('Contract', {
+export const contracts = pgTable('Contract', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	tenantId: text('tenantId')
 		.notNull()
@@ -246,15 +241,15 @@ export const contracts = sqliteTable('Contract', {
 		.references(() => rooms.id, { onDelete: 'cascade' }),
 	startDate: text('startDate').notNull(), // YYYY-MM-DD
 	endDate: text('endDate').notNull(), // YYYY-MM-DD
-	monthlyRent: real('monthlyRent').notNull(),
-	deposit: real('deposit').notNull().default(0),
+	monthlyRent: doublePrecision('monthlyRent').notNull(),
+	deposit: doublePrecision('deposit').notNull().default(0),
 	fileUrl: text('fileUrl'), // Ảnh/scan hợp đồng đã ký
 	status: text('status').notNull().default('active'), // 'active' | 'expired' | 'terminated'
 	notes: text('notes'),
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+	createdAt: datetime('createdAt').notNull().$defaultFn(now)
 });
 
-export const expenses = sqliteTable('Expense', {
+export const expenses = pgTable('Expense', {
 	id: text('id').primaryKey().$defaultFn(uuid),
 	landlordId: text('landlordId')
 		.notNull()
@@ -262,10 +257,10 @@ export const expenses = sqliteTable('Expense', {
 	propertyId: text('propertyId').references(() => properties.id, { onDelete: 'set null' }), // Để trống nếu là chi phí chung
 	category: text('category').notNull(), // 'electricity' | 'water' | 'internet' | 'maintenance' | 'cleaning' | 'tax' | 'other'
 	description: text('description').notNull(),
-	amount: real('amount').notNull(),
+	amount: doublePrecision('amount').notNull(),
 	date: text('date').notNull(), // YYYY-MM-DD
 	notes: text('notes'),
-	createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull().$defaultFn(now)
+	createdAt: datetime('createdAt').notNull().$defaultFn(now)
 });
 
 // Quan hệ giữa các bảng (dùng cho db.query relational API)

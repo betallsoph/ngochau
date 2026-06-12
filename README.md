@@ -42,7 +42,7 @@ Roomio là ứng dụng web hỗ trợ chủ trọ quản lý vận hành nhà t
 | Ngôn ngữ      | TypeScript                                  |
 | Giao diện     | Tailwind CSS 4, Lucide Icons, svelte-sonner |
 | ORM           | Drizzle ORM                                 |
-| Cơ sở dữ liệu | SQLite (better-sqlite3)                     |
+| Cơ sở dữ liệu | PostgreSQL (dev dùng PGlite nhúng)          |
 | Build tool    | Vite 8                                      |
 | Deploy        | @sveltejs/adapter-node                      |
 
@@ -59,7 +59,7 @@ Roomio là ứng dụng web hỗ trợ chủ trọ quản lý vận hành nhà t
    npm install
    ```
 
-2. Khởi tạo cơ sở dữ liệu (tạo file `dev.db` và áp dụng migration):
+2. Khởi tạo cơ sở dữ liệu (dev mặc định dùng PGlite — Postgres nhúng lưu vào thư mục `pgdata/`, không cần cài đặt gì thêm):
 
    ```bash
    npm run db:migrate
@@ -113,6 +113,7 @@ scripts/
   seed.ts                Script tạo dữ liệu mẫu
   cleanup-uploads.ts     Dọn ảnh đối chiếu quá 3 tháng
 uploads/                 Ảnh do người dùng tải lên (tự tạo khi chạy, không commit)
+pgdata/                  Dữ liệu PGlite khi chạy local (tự tạo, không commit)
 src/
   hooks.server.ts        Middleware xác thực phiên và phân quyền API
   lib/
@@ -121,7 +122,7 @@ src/
       session.ts         Tạo và xác minh session cookie
       db/
         schema.ts        Định nghĩa cơ sở dữ liệu (Drizzle schema)
-        index.ts         Kết nối SQLite và khởi tạo Drizzle client
+        index.ts         Kết nối Postgres (pg) hoặc PGlite và khởi tạo Drizzle client
   routes/
     +page.svelte         Trang chủ (landing)
     login/               Đăng nhập, đăng ký
@@ -159,13 +160,14 @@ Các thực thể chính trong `src/lib/server/db/schema.ts`:
 
 ## Biến môi trường
 
-| Biến             | Mặc định    | Mô tả                                                                                                        |
-| ---------------- | ----------- | ------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`   | `dev.db`    | Đường dẫn file SQLite                                                                                        |
-| `SESSION_SECRET` | (chuỗi dev) | Khóa ký cookie phiên đăng nhập — bắt buộc đổi khi chạy production                                            |
-| `UPLOAD_DIR`     | `uploads`   | Thư mục lưu ảnh upload                                                                                       |
-| `SEPAY_API_KEY`  | (trống)     | API key xác thực webhook SePay; bỏ trống thì webhook không kiểm tra header                                   |
-| `ORIGIN`         | (trống)     | Origin của site khi chạy bản build Node (bắt buộc để upload form hoạt động), ví dụ `https://app.example.com` |
+| Biến             | Mặc định    | Mô tả                                                                                                            |
+| ---------------- | ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`   | (trống)     | Chuỗi kết nối Postgres production, ví dụ `postgres://user:pass@host:5432/roomio`. Bỏ trống thì dùng PGlite local |
+| `PGLITE_DIR`     | `./pgdata`  | Thư mục dữ liệu PGlite khi chạy local                                                                            |
+| `SESSION_SECRET` | (chuỗi dev) | Khóa ký cookie phiên đăng nhập — bắt buộc đổi khi chạy production                                                |
+| `UPLOAD_DIR`     | `uploads`   | Thư mục lưu ảnh upload                                                                                           |
+| `SEPAY_API_KEY`  | (trống)     | API key xác thực webhook SePay; bỏ trống thì webhook không kiểm tra header                                       |
+| `ORIGIN`         | (trống)     | Origin của site khi chạy bản build Node (bắt buộc để upload form hoạt động), ví dụ `https://app.example.com`     |
 
 ## Xác thực và phân quyền
 
@@ -182,6 +184,6 @@ Các thực thể chính trong `src/lib/server/db/schema.ts`:
 
 ## Ghi chú
 
-- Dự án đang ở giai đoạn phát triển, dùng SQLite. Khi triển khai production cần đặt `SESSION_SECRET`, `ORIGIN` và cân nhắc nâng cấp thuật toán băm mật khẩu (hiện dùng SHA-256 không salt).
+- Khi triển khai production: tạo database PostgreSQL (Supabase/Neon/Railway hoặc tự host), đặt `DATABASE_URL`, chạy `npm run db:migrate` rồi `npm run build` và `npm run start`. Bắt buộc đặt `SESSION_SECRET` và `ORIGIN`; cân nhắc nâng cấp thuật toán băm mật khẩu (hiện dùng SHA-256 không salt).
+- PGlite chỉ dành cho môi trường dev local — production luôn dùng Postgres thật qua `DATABASE_URL`.
 - Khi thay đổi schema, chạy `npm run db:generate` để sinh migration mới, sau đó `npm run db:migrate` để áp dụng.
-- Đường dẫn file database có thể đổi qua biến môi trường `DATABASE_URL` (mặc định là `dev.db` ở thư mục gốc).

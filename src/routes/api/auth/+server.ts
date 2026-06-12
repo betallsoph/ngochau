@@ -34,30 +34,32 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			const passwordHash = hashPassword(password);
 			const userRole = role || 'LANDLORD'; // Default to LANDLORD
 
-			const user = db.transaction((tx) => {
-				const newUser = tx
-					.insert(users)
-					.values({ email, phone, passwordHash, name, role: userRole })
-					.returning()
-					.get();
+			const user = await db.transaction(async (tx) => {
+				const newUser = (
+					await tx
+						.insert(users)
+						.values({ email, phone, passwordHash, name, role: userRole })
+						.returning()
+				)[0];
 
 				let landlordProfileId: string | null = null;
 				let tenantProfileId: string | null = null;
 
 				if (userRole === 'LANDLORD') {
-					const profile = tx
-						.insert(landlordProfiles)
-						.values({
-							userId: newUser.id,
-							companyName: `${name} PMS`,
-							bankName: 'Vietcombank',
-							bankCode: 'VCB',
-							accountNumber: '1234567890',
-							accountName: name.toUpperCase(),
-							bankBranch: 'Chi nhánh TP.HCM'
-						})
-						.returning()
-						.get();
+					const profile = (
+						await tx
+							.insert(landlordProfiles)
+							.values({
+								userId: newUser.id,
+								companyName: `${name} PMS`,
+								bankName: 'Vietcombank',
+								bankCode: 'VCB',
+								accountNumber: '1234567890',
+								accountName: name.toUpperCase(),
+								bankBranch: 'Chi nhánh TP.HCM'
+							})
+							.returning()
+					)[0];
 					landlordProfileId = profile.id;
 
 					// Initialize default services for this landlord
@@ -69,22 +71,23 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 						{ name: 'Gửi xe máy', type: 'FLAT_VEHICLE', defaultRate: 100000 }
 					];
 
-					tx.insert(services)
-						.values(defaultServices.map((s) => ({ ...s, landlordId: profile.id, isActive: true })))
-						.run();
+					await tx
+						.insert(services)
+						.values(defaultServices.map((s) => ({ ...s, landlordId: profile.id, isActive: true })));
 				} else if (userRole === 'TENANT') {
 					// Fallback if tenant signs up directly (usually landlord creates them)
-					const profile = tx
-						.insert(tenantProfiles)
-						.values({
-							userId: newUser.id,
-							idNumber: '000000000000',
-							moveInDate: new Date().toISOString().split('T')[0],
-							deposit: 0,
-							notes: 'Tự đăng ký qua cổng khách'
-						})
-						.returning()
-						.get();
+					const profile = (
+						await tx
+							.insert(tenantProfiles)
+							.values({
+								userId: newUser.id,
+								idNumber: '000000000000',
+								moveInDate: new Date().toISOString().split('T')[0],
+								deposit: 0,
+								notes: 'Tự đăng ký qua cổng khách'
+							})
+							.returning()
+					)[0];
 					tenantProfileId = profile.id;
 				}
 

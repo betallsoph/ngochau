@@ -12,12 +12,14 @@
     AlertCircle,
     Pin,
     Calendar,
-    Home
+    Home,
+    CheckCircle2
   } from '@lucide/svelte';
 
   interface SpecialNote {
     id: string;
     content: string;
+    sender: string;
     isRead: boolean;
     createdAt: string;
     tenant: {
@@ -43,6 +45,18 @@
   interface Property {
     id: string;
     name: string;
+    blocks: { id: string; name: string }[];
+  }
+
+  interface TenantOption {
+    id: string;
+    user: { name: string };
+    rooms: { roomNumber: string }[];
+  }
+
+  interface RoomOption {
+    id: string;
+    roomNumber: string;
   }
 
   let landlordId = $state<string | null>(null);
@@ -62,6 +76,65 @@
   let annIsImportant = $state(false);
   let annTargetType = $state('ALL');
   let annTargetId = $state('');
+  let annPropertyId = $state(''); // Tòa nhà được chọn khi gửi theo block/phòng
+  let tenantOptions = $state<TenantOption[]>([]);
+  let roomOptions = $state<RoomOption[]>([]);
+
+  // Gửi lời nhắn cho khách (chiều chủ nhà -> khách)
+  let isNoteDialogOpen = $state(false);
+  let noteTenantId = $state('');
+  let noteContent = $state('');
+  let isSendingNote = $state(false);
+
+  const selectedProperty = $derived(properties.find((p) => p.id === annPropertyId));
+
+  async function fetchRoomOptions(propertyId: string) {
+    roomOptions = [];
+    if (!propertyId) return;
+    try {
+      const res = await fetch(`/api/rooms?propertyId=${propertyId}`);
+      const data = await res.json();
+      if (res.ok) roomOptions = data;
+    } catch {
+      // Bỏ qua, người dùng vẫn gửi được loại khác
+    }
+  }
+
+  async function fetchTenantOptions(profileId: string) {
+    try {
+      const res = await fetch(`/api/tenants?landlordId=${profileId}`);
+      const data = await res.json();
+      if (res.ok) tenantOptions = data;
+    } catch {
+      // Bỏ qua
+    }
+  }
+
+  async function sendNoteToTenant() {
+    if (!noteTenantId || !noteContent.trim()) {
+      toast.error('Vui lòng chọn khách và nhập nội dung lời nhắn');
+      return;
+    }
+    isSendingNote = true;
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId: noteTenantId, content: noteContent, sender: 'LANDLORD' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi gửi lời nhắn');
+      toast.success('Đã gửi lời nhắn cho khách');
+      isNoteDialogOpen = false;
+      noteContent = '';
+      noteTenantId = '';
+      if (landlordId) fetchNotes(landlordId);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      isSendingNote = false;
+    }
+  }
 
   onMount(() => {
     const sessionStr = localStorage.getItem('roomio_user');
@@ -73,6 +146,7 @@
     fetchNotes(session.landlordProfileId);
     fetchAnnouncements(session.id);
     fetchProperties(session.landlordProfileId);
+    fetchTenantOptions(session.landlordProfileId);
   });
 
   async function fetchNotes(profileId: string) {
@@ -149,7 +223,7 @@
           content: annContent,
           isImportant: annIsImportant,
           targetType: annTargetType,
-          targetId: annTargetType === 'PROPERTY' ? annTargetId : null
+          targetId: annTargetType === 'ALL' ? null : annTargetId
         })
       });
       const data = await res.json();
@@ -195,14 +269,14 @@
 
 <div class="space-y-6">
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl sm:text-2xl font-black text-black">Thông Báo & Lời Nhắn</h1>
+      <h1 class="text-2xl font-black text-black">Thông Báo & Lời Nhắn</h1>
       <p class="text-zinc-650 text-sm mt-1 font-bold">Đăng thông báo ghim cho cư dân và theo dõi các lời nhắn đặc biệt</p>
     </div>
     <button 
       onclick={() => isAddDialogOpen = true}
-      class="bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-black text-sm w-full sm:w-auto justify-center"
+      class="bg-blue-300 text-black border-2 border-black px-4 py-2.5 rounded-[6px] shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer font-black text-sm"
     >
       Đăng thông báo <Plus class="h-4.5 w-4.5" />
     </button>
@@ -215,6 +289,12 @@
         <h2 class="font-black text-black text-base flex items-center gap-2">
           Lời nhắn & Đề nghị từ khách <MessageSquare class="h-5 w-5" />
         </h2>
+        <button
+          onclick={() => (isNoteDialogOpen = true)}
+          class="px-2.5 py-1.5 bg-blue-300 border-2 border-black rounded-[6px] text-[10px] font-black uppercase shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
+        >
+          Gửi lời nhắn cho khách
+        </button>
       </div>
 
       {#if isLoadingNotes}
@@ -223,6 +303,7 @@
         </div>
       {:else if notes.length === 0}
         <div class="flex-grow p-8 flex flex-col items-center justify-center text-center bg-white">
+          <CheckCircle2 class="h-12 w-12 text-green-500 mb-2" />
           <p class="font-black text-black text-base">Hộp thư lời nhắn trống</p>
           <p class="text-zinc-500 text-xs font-semibold mt-1">Chưa có lời nhắn hoặc yêu cầu đề nghị riêng nào được gửi.</p>
         </div>
@@ -230,33 +311,32 @@
         <div class="divide-y-2 divide-black overflow-y-auto flex-grow bg-white">
           {#each notes as note}
             {@const roomNum = note.tenant.rooms[0]?.roomNumber || '--'}
-            <div class="p-4 hover:bg-slate-50 transition-all font-semibold text-black">
-              <!-- Mobile card layout -->
-              <div class="flex justify-between items-start gap-2">
-                <div class="min-w-0">
-                  <h4 class="font-black text-black text-sm truncate">
+            <div class="p-4 hover:bg-slate-50 transition-all flex flex-col gap-3 font-semibold text-black relative">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h4 class="font-black text-black text-sm flex items-center gap-1.5">
                     Phòng {roomNum} - {note.tenant.user.name}
+                    {#if note.sender === 'LANDLORD'}
+                      <span class="text-[9px] font-black border-2 border-black rounded px-1 bg-blue-200 uppercase">Chủ nhà gửi</span>
+                    {:else}
+                      <span class="text-[9px] font-black border-2 border-black rounded px-1 bg-yellow-200 uppercase">Khách gửi</span>
+                    {/if}
                   </h4>
-                  <p class="text-[10px] text-zinc-500 font-bold mt-0.5 uppercase">SĐT: {note.tenant.user.phone}</p>
+                  <p class="text-[10px] text-zinc-500 font-bold mt-0.5 uppercase">SĐT: {note.tenant.user.phone} • {new Date(note.createdAt).toLocaleString('vi-VN')}</p>
                 </div>
                 
-                <span class="shrink-0">
-                  {#if !note.isRead}
-                    <button
-                      onclick={() => markNoteAsRead(note.id)}
-                      class="px-2.5 py-1 bg-blue-300 hover:bg-blue-400 text-black border-2 border-black rounded-[6px] text-[10px] font-black uppercase shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
-                    >
-                      Đọc xong
-                    </button>
-                  {:else}
-                    <span class="text-[10px] text-zinc-500 font-bold uppercase">Đã xem</span>
-                  {/if}
-                </span>
+                {#if !note.isRead}
+                  <button
+                    onclick={() => markNoteAsRead(note.id)}
+                    class="px-2.5 py-1 bg-blue-300 hover:bg-blue-400 text-black border-2 border-black rounded-[6px] text-[10px] font-black uppercase shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
+                  >
+                    Đọc xong
+                  </button>
+                {:else}
+                  <span class="text-[10px] text-zinc-500 font-bold uppercase">Đã xem</span>
+                {/if}
               </div>
-              <div class="flex items-center justify-between mt-1">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase">{new Date(note.createdAt).toLocaleString('vi-VN')}</p>
-              </div>
-              <p class="text-black text-xs leading-relaxed bg-white/30 p-2.5 rounded-lg border-2 border-black shadow-secondary font-semibold mt-2">
+              <p class="text-black text-xs leading-relaxed bg-white/30 p-2.5 rounded-lg border-2 border-black shadow-secondary font-semibold">
                 {note.content}
               </p>
             </div>
@@ -279,37 +359,34 @@
         </div>
       {:else if announcements.length === 0}
         <div class="flex-grow p-8 flex flex-col items-center justify-center text-center bg-white">
-          <AlertCircle class="h-7 w-7 text-blue-500" />
-          <p class="font-black text-black text-base mt-2">Bảng tin đang trống</p>
+                      <AlertCircle class="h-7 w-7" />
+          <p class="font-black text-black text-base">Bảng tin đang trống</p>
           <p class="text-zinc-500 text-xs font-semibold mt-1">Đăng thông báo ghim để cư dân trong nhà trọ cập nhật tin tức.</p>
         </div>
       {:else}
         <div class="divide-y-2 divide-black overflow-y-auto flex-grow bg-white">
           {#each announcements as ann}
-            <div class="p-4 hover:bg-slate-50 transition-all font-semibold">
-              <!-- Mobile card layout -->
-              <div class="flex justify-between items-start gap-2">
-                <div class="min-w-0 flex items-center gap-2">
+            <div class="p-4 hover:bg-slate-50 transition-all flex flex-col gap-2 font-semibold">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0">
                   <Pin class="h-4 w-4 shrink-0 {ann.isImportant ? 'text-red-500 fill-red-500' : 'text-zinc-400'}" />
                   <h4 class="font-black text-black text-sm truncate">{ann.title}</h4>
                 </div>
-                <span class="shrink-0">
-                  <button
-                    onclick={() => handleDeleteAnnouncement(ann.id)}
-                    class="text-red-650 hover:bg-red-555 p-1 rounded-lg border-2 border-transparent hover:border-black transition-colors cursor-pointer"
-                  >
-                    <Trash2 class="h-4 w-4" />
-                  </button>
-                </span>
+                <button
+                  onclick={() => handleDeleteAnnouncement(ann.id)}
+                  class="text-red-650 hover:bg-red-555 p-1 rounded-lg border-2 border-transparent hover:border-black transition-colors cursor-pointer"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
               </div>
-              <div class="flex items-center justify-between mt-1">
-                <p class="text-[9px] text-zinc-500 font-bold uppercase">Gửi tới: {ann.targetType === 'ALL' ? 'Tất cả' : 'Theo tòa nhà'}</p>
-                <span class="flex items-center gap-1 text-[9px] text-zinc-500 font-bold uppercase">
+              <p class="text-zinc-700 text-xs leading-relaxed font-semibold">{ann.content}</p>
+              <div class="flex justify-between items-center text-[9px] text-zinc-500 font-bold uppercase mt-2 border-t border-black/10 pt-2">
+                <span>Gửi tới: {ann.targetType === 'ALL' ? 'Tất cả' : 'Theo tòa nhà'}</span>
+                <span class="flex items-center gap-1">
                   <Calendar class="h-3 w-3" />
                   {new Date(ann.createdAt).toLocaleDateString('vi-VN')}
                 </span>
               </div>
-              <p class="text-zinc-700 text-xs leading-relaxed font-semibold mt-2">{ann.content}</p>
             </div>
           {/each}
         </div>
@@ -374,7 +451,7 @@
           </div>
 
           <!-- Target & priority selectors -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="grid grid-cols-2 gap-3 text-xs">
             <div class="space-y-1">
               <label for="ann-target" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Đối tượng nhận tin</label>
               <select 
@@ -384,9 +461,12 @@
               >
                 <option value="ALL">Tất cả cư dân</option>
                 <option value="PROPERTY">Riêng tòa nhà</option>
+                <option value="BLOCK">Riêng block/tầng</option>
+                <option value="ROOM">Riêng phòng</option>
+                <option value="TENANT">Riêng một khách</option>
               </select>
             </div>
-            
+
             {#if annTargetType === 'PROPERTY'}
               <div class="space-y-1">
                 <label for="ann-prop" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Chọn tòa nhà</label>
@@ -399,6 +479,65 @@
                   <option value="">-- Chọn tòa nhà --</option>
                   {#each properties as prop}
                     <option value={prop.id}>{prop.name}</option>
+                  {/each}
+                </select>
+              </div>
+            {:else if annTargetType === 'BLOCK'}
+              <div class="space-y-1">
+                <label for="ann-block" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Chọn block</label>
+                <select 
+                  id="ann-block"
+                  bind:value={annTargetId}
+                  required
+                  class="w-full border-2 border-black px-2 py-1.5 rounded-lg bg-white font-semibold text-black focus:outline-none"
+                >
+                  <option value="">-- Chọn block --</option>
+                  {#each properties as prop}
+                    {#each prop.blocks || [] as block}
+                      <option value={block.id}>{prop.name} / {block.name}</option>
+                    {/each}
+                  {/each}
+                </select>
+              </div>
+            {:else if annTargetType === 'ROOM'}
+              <div class="space-y-1">
+                <label for="ann-room-prop" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Tòa nhà rồi chọn phòng</label>
+                <div class="flex gap-1">
+                  <select 
+                    id="ann-room-prop"
+                    bind:value={annPropertyId}
+                    onchange={() => fetchRoomOptions(annPropertyId)}
+                    class="w-1/2 border-2 border-black px-2 py-1.5 rounded-lg bg-white font-semibold text-black focus:outline-none"
+                  >
+                    <option value="">-- Tòa --</option>
+                    {#each properties as prop}
+                      <option value={prop.id}>{prop.name}</option>
+                    {/each}
+                  </select>
+                  <select 
+                    bind:value={annTargetId}
+                    required
+                    class="w-1/2 border-2 border-black px-2 py-1.5 rounded-lg bg-white font-semibold text-black focus:outline-none"
+                  >
+                    <option value="">-- Phòng --</option>
+                    {#each roomOptions as room}
+                      <option value={room.id}>P.{room.roomNumber}</option>
+                    {/each}
+                  </select>
+                </div>
+              </div>
+            {:else if annTargetType === 'TENANT'}
+              <div class="space-y-1">
+                <label for="ann-tenant" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Chọn khách thuê</label>
+                <select 
+                  id="ann-tenant"
+                  bind:value={annTargetId}
+                  required
+                  class="w-full border-2 border-black px-2 py-1.5 rounded-lg bg-white font-semibold text-black focus:outline-none"
+                >
+                  <option value="">-- Chọn khách --</option>
+                  {#each tenantOptions as tenant}
+                    <option value={tenant.id}>{tenant.user.name} (P.{tenant.rooms[0]?.roomNumber || '--'})</option>
                   {/each}
                 </select>
               </div>
@@ -415,18 +554,18 @@
             <label for="ann-imp" class="font-bold text-zinc-700 select-none cursor-pointer">Đánh dấu quan trọng (Ghim lên đầu)</label>
           </div>
 
-          <div class="flex flex-col sm:flex-row justify-end gap-3 pt-3 border-t-2 border-black">
+          <div class="flex justify-end gap-3 pt-3 border-t-2 border-black">
             <button 
               type="button" 
               onclick={() => isAddDialogOpen = false}
-              class="border-2 border-black bg-white hover:bg-zinc-150 text-black px-4 py-2 rounded-[6px] text-xs font-bold transition-all cursor-pointer w-full sm:w-auto justify-center"
+              class="border-2 border-black bg-white hover:bg-zinc-150 text-black px-4 py-2 rounded-[6px] text-xs font-bold transition-all cursor-pointer"
             >
               Hủy
             </button>
             <button 
               type="submit"
               disabled={isSubmitting}
-              class="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black px-4 py-2 rounded-[6px] text-xs font-black shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer w-full sm:w-auto justify-center"
+              class="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 text-black border-2 border-black px-4 py-2 rounded-[6px] text-xs font-black shadow-secondary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
             >
               Đăng bản tin
               {#if isSubmitting}
@@ -439,3 +578,48 @@
     </div>
   {/if}
 </div>
+
+{#if isNoteDialogOpen}
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white border-2 border-black rounded-lg w-full max-w-md">
+      <div class="flex items-center justify-between p-4 border-b-2 border-black">
+        <h2 class="font-black text-base">Gửi lời nhắn cho khách thuê</h2>
+        <button onclick={() => (isNoteDialogOpen = false)} class="p-1.5 border-2 border-black rounded-[6px] hover:bg-zinc-50">
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="space-y-1">
+          <label for="note-tenant" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Khách thuê</label>
+          <select
+            id="note-tenant"
+            bind:value={noteTenantId}
+            class="w-full border-2 border-black px-2 py-2 rounded-lg bg-white font-semibold text-black text-sm focus:outline-none"
+          >
+            <option value="">-- Chọn khách --</option>
+            {#each tenantOptions as tenant}
+              <option value={tenant.id}>{tenant.user.name} (P.{tenant.rooms[0]?.roomNumber || '--'})</option>
+            {/each}
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label for="note-content" class="text-[10px] text-zinc-650 font-bold uppercase tracking-wider block">Nội dung lưu ý</label>
+          <textarea
+            id="note-content"
+            bind:value={noteContent}
+            rows="4"
+            placeholder="Lời nhắn/lưu ý riêng gửi khách, tách biệt với chat để không bị trôi..."
+            class="w-full border-2 border-black p-3 text-xs rounded-lg bg-white font-semibold text-black focus:outline-none"
+          ></textarea>
+        </div>
+        <button
+          onclick={sendNoteToTenant}
+          disabled={isSendingNote}
+          class="w-full py-2.5 bg-blue-300 border-2 border-black rounded-[6px] shadow-secondary text-sm font-black hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all disabled:opacity-50"
+        >
+          {isSendingNote ? 'Đang gửi...' : 'Gửi lời nhắn'}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}

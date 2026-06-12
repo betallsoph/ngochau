@@ -139,6 +139,26 @@
         });
       });
 
+      // 4. Overlay readings already submitted by tenants and approved (chốt số)
+      try {
+        const prefillRes = await fetch(`/api/invoices/bulk?propertyId=${propertyId}&month=${month}`);
+        const prefill = await prefillRes.json();
+        if (prefillRes.ok) {
+          for (const [roomId, services] of Object.entries(prefill.readings || {})) {
+            for (const [serviceId, reading] of Object.entries(services as Record<string, any>)) {
+              if (reading.status === 'approved' && newReadings[roomId]?.[serviceId]) {
+                newReadings[roomId][serviceId] = {
+                  prevValue: reading.prevValue.toString(),
+                  currValue: reading.currValue.toString()
+                };
+              }
+            }
+          }
+        }
+      } catch {
+        // Không tải được dữ liệu chốt số thì vẫn cho nhập tay như cũ
+      }
+
       readingsMap = newReadings;
     } catch (e: any) {
       toast.error('Lỗi khi tải dữ liệu phòng: ' + e.message);

@@ -1,1 +1,0 @@
-import{c as e,s as t}from"./Bj-fpdES.js";import"./xihTtKlq.js";import{t as n}from"./DD_xfyip.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=t(a,r),s=[[`line`,{x1:`12`,x2:`12`,y1:`2`,y2:`22`}],[`path`,{d:`M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6`}]];n(i,e({name:`dollar-sign`},()=>o,{get iconNode(){return s}}))}export{i as t};

@@ -1,272 +1,292 @@
 import { json } from '@sveltejs/kit';
+import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/server/db';
+import {
+	rooms,
+	properties,
+	services,
+	roomServiceConfigs,
+	meterReadings,
+	roomAssets
+} from '$lib/server/db/schema';
+import { and, asc, desc, eq } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
-  try {
-    const propertyId = url.searchParams.get('propertyId');
-    const blockId = url.searchParams.get('blockId');
-    const tenantId = url.searchParams.get('tenantId');
+	try {
+		const propertyId = url.searchParams.get('propertyId');
+		const blockId = url.searchParams.get('blockId');
+		const tenantId = url.searchParams.get('tenantId');
+		const status = url.searchParams.get('status');
 
-    const filter: any = {};
-    if (propertyId) {
-      filter.propertyId = propertyId;
-    }
-    if (blockId && blockId !== 'all') {
-      filter.blockId = blockId;
-    }
-    if (tenantId) {
-      filter.tenantId = tenantId;
-    }
+		const conditions = [];
+		if (status) {
+			conditions.push(eq(rooms.status, status));
+		}
+		if (propertyId) {
+			conditions.push(eq(rooms.propertyId, propertyId));
+		}
+		if (blockId && blockId !== 'all') {
+			conditions.push(eq(rooms.blockId, blockId));
+		}
+		if (tenantId) {
+			conditions.push(eq(rooms.tenantId, tenantId));
+		}
 
-    const rooms = await db.room.findMany({
-      where: filter,
-      include: {
-        property: true,
-        tenant: {
-          include: { user: true }
-        },
-        services: {
-          include: { service: true }
-        },
-        assets: true,
-        meterReadings: {
-          orderBy: { month: 'desc' }
-        }
-      },
-      orderBy: { roomNumber: 'asc' }
-    });
+		const result = await db.query.rooms.findMany({
+			where: conditions.length > 0 ? and(...conditions) : undefined,
+			with: {
+				property: true,
+				tenant: {
+					with: { user: true }
+				},
+				services: {
+					with: { service: true }
+				},
+				assets: true,
+				meterReadings: {
+					orderBy: desc(meterReadings.month)
+				}
+			},
+			orderBy: asc(rooms.roomNumber)
+		});
 
-    return json(rooms);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(result);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { propertyId, blockId, roomNumber, roomCode, roomType, floor, monthlyRent, area } = body;
+	try {
+		const body = await request.json();
+		const { propertyId, blockId, roomNumber, roomCode, roomType, floor, monthlyRent, area } = body;
 
-    if (!propertyId || !roomNumber || !roomType || !monthlyRent) {
-      return json({ error: 'Missing required room fields' }, { status: 400 });
-    }
+		if (!propertyId || !roomNumber || !roomType || !monthlyRent) {
+			return json({ error: 'Missing required room fields' }, { status: 400 });
+		}
 
-    // Check if room number already exists in this property
-    const existing = await db.room.findFirst({
-      where: { propertyId, roomNumber }
-    });
+		// Check if room number already exists in this property
+		const existing = await db.query.rooms.findFirst({
+			where: and(eq(rooms.propertyId, propertyId), eq(rooms.roomNumber, roomNumber))
+		});
 
-    if (existing) {
-      return json({ error: 'Số phòng này đã tồn tại trong tòa nhà này' }, { status: 400 });
-    }
+		if (existing) {
+			return json({ error: 'Số phòng này đã tồn tại trong tòa nhà này' }, { status: 400 });
+		}
 
-    const room = await db.$transaction(async (tx) => {
-      // Create the room
-      const r = await tx.room.create({
-        data: {
-          propertyId,
-          blockId: blockId || null,
-          roomNumber,
-          roomCode: roomCode || null,
-          roomType,
-          floor: floor ? Number(floor) : null,
-          status: 'empty',
-          monthlyRent: Number(monthlyRent),
-          area: area ? Number(area) : null,
-          debtAmount: 0
-        }
-      });
+		const room = db.transaction((tx) => {
+			// Create the room
+			const r = tx
+				.insert(rooms)
+				.values({
+					propertyId,
+					blockId: blockId || null,
+					roomNumber,
+					roomCode: roomCode || null,
+					roomType,
+					floor: floor ? Number(floor) : null,
+					status: 'empty',
+					monthlyRent: Number(monthlyRent),
+					area: area ? Number(area) : null,
+					debtAmount: 0
+				})
+				.returning()
+				.get();
 
-      // Find landlord's services
-      const property = await tx.property.findUnique({
-        where: { id: propertyId },
-        select: { landlordId: true }
-      });
+			// Find landlord's services
+			const property = tx
+				.select({ landlordId: properties.landlordId })
+				.from(properties)
+				.where(eq(properties.id, propertyId))
+				.get();
 
-      if (property) {
-        const services = await tx.service.findMany({
-          where: { landlordId: property.landlordId, isActive: true }
-        });
+			if (property) {
+				const activeServices = tx
+					.select()
+					.from(services)
+					.where(and(eq(services.landlordId, property.landlordId), eq(services.isActive, true)))
+					.all();
 
-        // Map room to all active services with default rates
-        for (const service of services) {
-          await tx.roomServiceConfig.create({
-            data: {
-              roomId: r.id,
-              serviceId: service.id,
-              customRate: null,
-              quantity: 1
-            }
-          });
-        }
-      }
+				// Map room to all active services with default rates
+				if (activeServices.length > 0) {
+					tx.insert(roomServiceConfigs)
+						.values(
+							activeServices.map((service) => ({
+								roomId: r.id,
+								serviceId: service.id,
+								customRate: null,
+								quantity: 1
+							}))
+						)
+						.run();
+				}
+			}
 
-      return r;
-    });
+			return r;
+		});
 
-    const fullRoom = await db.room.findUnique({
-      where: { id: room.id },
-      include: {
-        tenant: { include: { user: true } },
-        services: { include: { service: true } },
-        assets: true,
-        meterReadings: true
-      }
-    });
+		const fullRoom = await db.query.rooms.findFirst({
+			where: eq(rooms.id, room.id),
+			with: {
+				tenant: { with: { user: true } },
+				services: { with: { service: true } },
+				assets: true,
+				meterReadings: true
+			}
+		});
 
-    return json(fullRoom);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(fullRoom);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const PUT: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { id, action, ...data } = body;
+	try {
+		const body = await request.json();
+		const { id, action, ...data } = body;
 
-    if (!id) {
-      return json({ error: 'Missing room ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing room ID' }, { status: 400 });
+		}
 
-    if (action === 'updateMeters') {
-      const { serviceId, month, prevValue, currValue, photoUrl } = data;
+		if (action === 'updateMeters') {
+			const { serviceId, month, prevValue, currValue, photoUrl } = data;
 
-      if (!serviceId || !month || currValue === undefined || prevValue === undefined) {
-        return json({ error: 'Missing meter reading parameters' }, { status: 400 });
-      }
+			if (!serviceId || !month || currValue === undefined || prevValue === undefined) {
+				return json({ error: 'Missing meter reading parameters' }, { status: 400 });
+			}
 
-      const existingReading = await db.meterReading.findFirst({
-        where: { roomId: id, serviceId, month }
-      });
+			const existingReading = await db.query.meterReadings.findFirst({
+				where: and(
+					eq(meterReadings.roomId, id),
+					eq(meterReadings.serviceId, serviceId),
+					eq(meterReadings.month, month)
+				)
+			});
 
-      if (existingReading) {
-        await db.meterReading.update({
-          where: { id: existingReading.id },
-          data: {
-            prevValue: Number(prevValue),
-            currValue: Number(currValue),
-            photoUrl: photoUrl || undefined,
-            recordedAt: new Date().toISOString().split('T')[0]
-          }
-        });
-      } else {
-        await db.meterReading.create({
-          data: {
-            roomId: id,
-            serviceId,
-            month,
-            prevValue: Number(prevValue),
-            currValue: Number(currValue),
-            photoUrl: photoUrl || null,
-            recordedAt: new Date().toISOString().split('T')[0]
-          }
-        });
-      }
-    } else if (action === 'updateAsset') {
-      const { assetId, name, code, status, notes } = data;
+			if (existingReading) {
+				const updateData: Record<string, unknown> = {
+					prevValue: Number(prevValue),
+					currValue: Number(currValue),
+					recordedAt: new Date().toISOString().split('T')[0]
+				};
+				if (photoUrl) updateData.photoUrl = photoUrl;
 
-      if (!name) {
-        return json({ error: 'Missing asset name' }, { status: 400 });
-      }
+				await db
+					.update(meterReadings)
+					.set(updateData)
+					.where(eq(meterReadings.id, existingReading.id));
+			} else {
+				await db.insert(meterReadings).values({
+					roomId: id,
+					serviceId,
+					month,
+					prevValue: Number(prevValue),
+					currValue: Number(currValue),
+					photoUrl: photoUrl || null,
+					recordedAt: new Date().toISOString().split('T')[0]
+				});
+			}
+		} else if (action === 'updateAsset') {
+			const { assetId, name, code, status, notes } = data;
 
-      if (assetId) {
-        await db.roomAsset.update({
-          where: { id: assetId },
-          data: { name, code, status, notes }
-        });
-      } else {
-        await db.roomAsset.create({
-          data: { roomId: id, name, code, status, notes }
-        });
-      }
-    } else if (action === 'deleteAsset') {
-      const { assetId } = data;
-      if (assetId) {
-        await db.roomAsset.delete({
-          where: { id: assetId }
-        });
-      }
-    } else if (action === 'updateServiceConfig') {
-      const { configs } = data; // configs: array of { serviceId, customRate, quantity }
-      if (configs && Array.isArray(configs)) {
-        for (const config of configs) {
-          const existingConfig = await db.roomServiceConfig.findFirst({
-            where: { roomId: id, serviceId: config.serviceId }
-          });
+			if (!name) {
+				return json({ error: 'Missing asset name' }, { status: 400 });
+			}
 
-          if (existingConfig) {
-            await db.roomServiceConfig.update({
-              where: { id: existingConfig.id },
-              data: {
-                customRate: config.customRate === '' || config.customRate === null ? null : Number(config.customRate),
-                quantity: Number(config.quantity) || 1
-              }
-            });
-          }
-        }
-      }
-    } else if (action === 'checkout') {
-      await db.room.update({
-        where: { id },
-        data: {
-          status: 'empty',
-          tenantId: null,
-          debtAmount: 0
-        }
-      });
-    } else {
-      // Standard room update
-      const updateData: any = {};
-      if (data.roomNumber !== undefined) updateData.roomNumber = data.roomNumber;
-      if (data.roomCode !== undefined) updateData.roomCode = data.roomCode;
-      if (data.roomType !== undefined) updateData.roomType = data.roomType;
-      if (data.floor !== undefined) updateData.floor = Number(data.floor);
-      if (data.monthlyRent !== undefined) updateData.monthlyRent = Number(data.monthlyRent);
-      if (data.area !== undefined) updateData.area = Number(data.area);
-      if (data.status !== undefined) updateData.status = data.status;
-      if (data.debtAmount !== undefined) updateData.debtAmount = Number(data.debtAmount);
-      if (data.blockId !== undefined) updateData.blockId = data.blockId;
+			if (assetId) {
+				await db
+					.update(roomAssets)
+					.set({ name, code, status, notes })
+					.where(eq(roomAssets.id, assetId));
+			} else {
+				await db.insert(roomAssets).values({ roomId: id, name, code, status, notes });
+			}
+		} else if (action === 'deleteAsset') {
+			const { assetId } = data;
+			if (assetId) {
+				await db.delete(roomAssets).where(eq(roomAssets.id, assetId));
+			}
+		} else if (action === 'updateServiceConfig') {
+			const { configs } = data; // configs: array of { serviceId, customRate, quantity }
+			if (configs && Array.isArray(configs)) {
+				for (const config of configs) {
+					await db
+						.update(roomServiceConfigs)
+						.set({
+							customRate:
+								config.customRate === '' || config.customRate === null
+									? null
+									: Number(config.customRate),
+							quantity: Number(config.quantity) || 1
+						})
+						.where(
+							and(
+								eq(roomServiceConfigs.roomId, id),
+								eq(roomServiceConfigs.serviceId, config.serviceId)
+							)
+						);
+				}
+			}
+		} else if (action === 'checkout') {
+			await db
+				.update(rooms)
+				.set({
+					status: 'empty',
+					tenantId: null,
+					debtAmount: 0
+				})
+				.where(eq(rooms.id, id));
+		} else {
+			// Standard room update
+			const updateData: Record<string, unknown> = {};
+			if (data.roomNumber !== undefined) updateData.roomNumber = data.roomNumber;
+			if (data.roomCode !== undefined) updateData.roomCode = data.roomCode;
+			if (data.roomType !== undefined) updateData.roomType = data.roomType;
+			if (data.floor !== undefined) updateData.floor = Number(data.floor);
+			if (data.monthlyRent !== undefined) updateData.monthlyRent = Number(data.monthlyRent);
+			if (data.area !== undefined) updateData.area = Number(data.area);
+			if (data.status !== undefined) updateData.status = data.status;
+			if (data.debtAmount !== undefined) updateData.debtAmount = Number(data.debtAmount);
+			if (data.blockId !== undefined) updateData.blockId = data.blockId;
 
-      await db.room.update({
-        where: { id },
-        data: updateData
-      });
-    }
+			if (Object.keys(updateData).length > 0) {
+				await db.update(rooms).set(updateData).where(eq(rooms.id, id));
+			}
+		}
 
-    const updatedRoom = await db.room.findUnique({
-      where: { id },
-      include: {
-        tenant: { include: { user: true } },
-        services: { include: { service: true } },
-        assets: true,
-        meterReadings: {
-          orderBy: { month: 'desc' }
-        }
-      }
-    });
+		const updatedRoom = await db.query.rooms.findFirst({
+			where: eq(rooms.id, id),
+			with: {
+				tenant: { with: { user: true } },
+				services: { with: { service: true } },
+				assets: true,
+				meterReadings: {
+					orderBy: desc(meterReadings.month)
+				}
+			}
+		});
 
-    return json(updatedRoom);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json(updatedRoom);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const DELETE: RequestHandler = async ({ url }) => {
-  try {
-    const id = url.searchParams.get('id');
+	try {
+		const id = url.searchParams.get('id');
 
-    if (!id) {
-      return json({ error: 'Missing room ID' }, { status: 400 });
-    }
+		if (!id) {
+			return json({ error: 'Missing room ID' }, { status: 400 });
+		}
 
-    await db.room.delete({
-      where: { id }
-    });
+		await db.delete(rooms).where(eq(rooms.id, id));
 
-    return json({ success: true });
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		return json({ success: true });
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };

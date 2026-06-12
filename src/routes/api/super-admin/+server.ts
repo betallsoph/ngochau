@@ -1,64 +1,81 @@
 import { json } from '@sveltejs/kit';
+import { errorMessage } from '$lib/server/api';
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/server/db';
+import { landlordProfiles, users } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
-export const GET: RequestHandler = async ({ url }) => {
-  try {
-    const landlords = await db.landlordProfile.findMany({
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, phone: true, isActive: true }
-        },
-        properties: {
-          select: { id: true, name: true, _count: { select: { rooms: true } } }
-        }
-      },
-      orderBy: {
-        user: { name: 'asc' }
-      }
-    });
+export const GET: RequestHandler = async () => {
+	try {
+		const landlords = await db.query.landlordProfiles.findMany({
+			with: {
+				user: {
+					columns: { id: true, name: true, email: true, phone: true, isActive: true }
+				},
+				properties: {
+					columns: { id: true, name: true },
+					with: {
+						rooms: { columns: { id: true } }
+					}
+				}
+			}
+		});
 
-    return json(landlords);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+		// Keep the same response shape as before: properties expose a room count instead of the room list
+		const result = landlords
+			.map((landlord) => ({
+				...landlord,
+				properties: landlord.properties.map((property) => ({
+					id: property.id,
+					name: property.name,
+					_count: { rooms: property.rooms.length }
+				}))
+			}))
+			.sort((a, b) => a.user.name.localeCompare(b.user.name, 'vi'));
+
+		return json(result);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
 
 export const PUT: RequestHandler = async ({ request }) => {
-  try {
-    const body = await request.json();
-    const { landlordId, userId, subscriptionType, isActive, subValidUntil } = body;
+	try {
+		const body = await request.json();
+		const { landlordId, userId, subscriptionType, isActive, subValidUntil } = body;
 
-    if (!landlordId && !userId) {
-      return json({ error: 'Missing landlord ID or user ID' }, { status: 400 });
-    }
+		if (!landlordId && !userId) {
+			return json({ error: 'Missing landlord ID or user ID' }, { status: 400 });
+		}
 
-    const updated = await db.$transaction(async (tx) => {
-      let profile = null;
-      let user = null;
+		const updated = db.transaction((tx) => {
+			let profile = null;
+			let user = null;
 
-      if (landlordId) {
-        profile = await tx.landlordProfile.update({
-          where: { id: landlordId },
-          data: {
-            subscriptionType,
-            subValidUntil: subValidUntil ? new Date(subValidUntil) : undefined
-          }
-        });
-      }
+			if (landlordId) {
+				const updateData: Record<string, unknown> = {};
+				if (subscriptionType !== undefined) updateData.subscriptionType = subscriptionType;
+				if (subValidUntil) updateData.subValidUntil = new Date(subValidUntil);
 
-      if (userId && isActive !== undefined) {
-        user = await tx.user.update({
-          where: { id: userId },
-          data: { isActive }
-        });
-      }
+				if (Object.keys(updateData).length > 0) {
+					profile = tx
+						.update(landlordProfiles)
+						.set(updateData)
+						.where(eq(landlordProfiles.id, landlordId))
+						.returning()
+						.get();
+				}
+			}
 
-      return { profile, user };
-    });
+			if (userId && isActive !== undefined) {
+				user = tx.update(users).set({ isActive }).where(eq(users.id, userId)).returning().get();
+			}
 
-    return json(updated);
-  } catch (error: any) {
-    return json({ error: error.message }, { status: 500 });
-  }
+			return { profile, user };
+		});
+
+		return json(updated);
+	} catch (error) {
+		return json({ error: errorMessage(error) }, { status: 500 });
+	}
 };
